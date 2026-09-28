@@ -15,8 +15,6 @@ class Role extends Model
 {
     public const CUSTOMER = 'customer';
 
-    protected $table = 'role';
-
     protected $primaryKey = 'role_id';
 
     public $timestamps = false;
