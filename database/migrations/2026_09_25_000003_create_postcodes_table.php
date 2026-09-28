@@ -6,26 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('postcodes', function (Blueprint $table) {
+        Schema::create('postcode', function (Blueprint $table) {
             $table->string('adress')->primary();
             $table->string('street');
             $table->string('residence');
             $table->string('house_number', 10);
             $table->string('city');
-            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('postcodes');
+        Schema::dropIfExists('postcode');
     }
 };

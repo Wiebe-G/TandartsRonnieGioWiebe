@@ -6,14 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('employees', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('role_id')->constrained()->restrictOnDelete();
+        Schema::create('employee', function (Blueprint $table) {
+            $table->id('employee_id');
+            $table->foreignId('role_id')->constrained('role', 'role_id')->restrictOnDelete();
             $table->string('firstname');
             $table->string('lastname');
             $table->string('email')->unique();
@@ -21,15 +18,11 @@ return new class extends Migration
             $table->string('phonenumber', 20)->nullable();
             $table->date('birthday')->nullable();
             $table->string('status')->default('active');
-            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('employees');
+        Schema::dropIfExists('employee');
     }
 };
