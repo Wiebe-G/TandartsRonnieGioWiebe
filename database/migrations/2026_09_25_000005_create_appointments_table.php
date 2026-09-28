@@ -10,9 +10,9 @@ return new class extends Migration
     {
         Schema::create('appointment', function (Blueprint $table) {
             $table->id('appointment_id');
-            $table->foreignId('customer_id')->constrained('customer', 'customer_id')->restrictOnDelete();
-            $table->foreignId('employee_id')->constrained('employee', 'employee_id')->restrictOnDelete();
-            $table->foreignId('extra_employee_id')->nullable()->constrained('employee', 'employee_id')->nullOnDelete();
+            $table->foreignId('customer_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('dentist_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('assistant_id')->nullable()->constrained('users')->nullOnDelete();
             $table->date('date');
             $table->time('starttime');
             $table->time('endtime');

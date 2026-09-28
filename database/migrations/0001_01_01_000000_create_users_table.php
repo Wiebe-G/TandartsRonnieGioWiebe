@@ -13,10 +13,17 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->unsignedBigInteger('role_id'); // foreign key added after the role table exists
+            $table->foreignId('employee_id')->nullable()->constrained('users')->nullOnDelete(); // a customer's own dentist
+            $table->string('firstname');
+            $table->string('lastname');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('phonenumber', 20)->nullable();
+            $table->date('birthday')->nullable();
+            $table->string('status')->default('active');
+            $table->string('adress')->nullable(); // foreign key added after the postcode table exists
             $table->rememberToken();
             $table->timestamps();
         });
