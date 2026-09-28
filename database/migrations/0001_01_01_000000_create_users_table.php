@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('phonenumber', 20)->nullable();
             $table->date('birthday')->nullable();
             $table->string('status')->default('active');
-            $table->string('adress')->nullable(); // foreign key added after the postcode table exists
+            $table->string('address')->nullable(); // foreign key added after the postcode table exists
             $table->rememberToken();
             $table->timestamps();
         });
