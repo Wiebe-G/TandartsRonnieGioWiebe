@@ -1,9 +1,10 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import {Link, usePage} from '@inertiajs/react';
+import {PageProps} from '@inertiajs/core';
+import {BookOpen, FolderGit2, LayoutGrid} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
-import { NavFooter } from '@/components/nav-footer';
-import { NavMain } from '@/components/nav-main';
-import { NavUser } from '@/components/nav-user';
+import {NavFooter} from '@/components/nav-footer';
+import {NavMain} from '@/components/nav-main';
+import {NavUser} from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
@@ -13,10 +14,16 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import {dashboard} from '@/routes';
+import type {NavItem} from '@/types';
+import type {User} from '@/types/Interfaces';
+
+interface Props extends PageProps {
+    auth: User;
+}
 
 export function AppSidebar() {
+    const {auth} = usePage().props;
     const dashboardUrl = dashboard();
 
     const mainNavItems: NavItem[] = [
@@ -25,6 +32,15 @@ export function AppSidebar() {
             href: dashboardUrl,
             icon: LayoutGrid,
         },
+        ...(auth.user.role_id != 1
+                ? [
+                    {
+                    title: 'Afspraken',
+                    href: '/appointments',
+                    icon: LayoutGrid
+                    }
+                ] : []
+        )
     ];
 
     const footerNavItems: NavItem[] = [
@@ -47,7 +63,7 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href={dashboardUrl} prefetch>
-                                <AppLogo />
+                                <AppLogo/>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -55,12 +71,12 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={mainNavItems}/>
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser />
+                <NavFooter items={footerNavItems} className="mt-auto"/>
+                <NavUser/>
             </SidebarFooter>
         </Sidebar>
     );
