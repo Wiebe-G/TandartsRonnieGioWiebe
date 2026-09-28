@@ -47,21 +47,40 @@ export default function Profile({
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="firstname">First name</Label>
 
                                 <Input
-                                    id="name"
+                                    id="firstname"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
-                                    name="name"
+                                    defaultValue={auth.user.firstname}
+                                    name="firstname"
                                     required
-                                    autoComplete="name"
-                                    placeholder="Full name"
+                                    autoComplete="given-name"
+                                    placeholder="First name"
                                 />
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.name}
+                                    message={errors.firstname}
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="lastname">Last name</Label>
+
+                                <Input
+                                    id="lastname"
+                                    className="mt-1 block w-full"
+                                    defaultValue={auth.user.lastname}
+                                    name="lastname"
+                                    required
+                                    autoComplete="family-name"
+                                    placeholder="Last name"
+                                />
+
+                                <InputError
+                                    className="mt-2"
+                                    message={errors.lastname}
                                 />
                             </div>
 

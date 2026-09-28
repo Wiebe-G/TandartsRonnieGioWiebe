@@ -27,19 +27,36 @@ export default function Register({ passwordRules }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="firstname">First name</Label>
                                 <Input
-                                    id="name"
+                                    id="firstname"
                                     type="text"
                                     required
                                     autoFocus
                                     tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
+                                    autoComplete="given-name"
+                                    name="firstname"
+                                    placeholder="First name"
                                 />
                                 <InputError
-                                    message={errors.name}
+                                    message={errors.firstname}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="lastname">Last name</Label>
+                                <Input
+                                    id="lastname"
+                                    type="text"
+                                    required
+                                    tabIndex={1}
+                                    autoComplete="family-name"
+                                    name="lastname"
+                                    placeholder="Last name"
+                                />
+                                <InputError
+                                    message={errors.lastname}
                                     className="mt-2"
                                 />
                             </div>
