@@ -18,9 +18,8 @@ return new class extends Migration
         DB::table('role')->insert([
             ['name' => 'customer'],
             ['name' => 'dentist'],
-            ['name' => 'dental_hygienist'],
-            ['name' => 'assistant'],
-            ['name' => 'practice_manager'],
+            ['name' => 'assistent'],
+            ['name' => 'admin']
         ]);
     }
 
