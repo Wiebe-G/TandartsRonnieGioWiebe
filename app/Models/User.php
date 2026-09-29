@@ -76,14 +76,6 @@ class User extends Authenticatable
     }
 
     /**
-     * @return BelongsTo<Role, $this>
-     */
-    public function role(): BelongsTo
-    {
-        return $this->belongsTo(Role::class, 'role_id');
-    }
-
-    /**
      * The dentist assigned to this customer.
      *
      * @return BelongsTo<User, $this>

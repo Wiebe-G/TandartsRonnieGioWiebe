@@ -35,10 +35,10 @@ export function AppSidebar() {
         ...(auth.user.role_id != 1
                 ? [
                     {
-                    title: 'Afspraken',
-                    href: '/appointments',
-                    icon: LayoutGrid
-                    }
+                        title: 'Afspraken',
+                        href: '/appointments',
+                        icon: LayoutGrid
+                    },
                 ] : []
         )
     ];
