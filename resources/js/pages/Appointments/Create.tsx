@@ -4,6 +4,7 @@ import {PageProps} from "@inertiajs/core";
 import {User} from "@/types/Interfaces";
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {ChevronDownIcon} from "lucide-react";
+import {useState} from "react";
 
 interface Props extends PageProps {
 	// Customers blijft een object hoe hard ik ook Laravel probeer te vertellen dat het een array moet zijn
@@ -13,7 +14,13 @@ interface Props extends PageProps {
 export default function Create({}) {
 	const {Customers} = usePage<Props>().props;
 
-	console.log(Customers)
+	console.log(Customers);
+
+	const [selectedUser, setSelectedUser] = useState<User>();
+
+	const handleCategoryChange = (id: number): void => {
+		setSelectedUser(Customers.find((cat) => cat.id === id));
+	}
 
 	return (
 		<>
@@ -25,7 +32,7 @@ export default function Create({}) {
 						<Dropdown.Trigger asChild>
 							<button type={'button'}
 							        className="flex items-center rounded bg-blue-500 px-4 py-2 text-white" value={0}>
-								{'Selecteer een klant'}
+								{selectedUser ? selectedUser.firstname : 'Selecteer een klant'}
 								<ChevronDownIcon className="ml-2 size-4"/>
 							</button>
 						</Dropdown.Trigger>
@@ -34,7 +41,7 @@ export default function Create({}) {
 							<Dropdown.Content
 								className="flex flex-col items-center z-50 min-w-55 rounded-md border bg-white p-1 shadow-lg dark:bg-slate-800">
 								<Dropdown.Item className={'DropdownDarkButtonCenteredItem'}
-									// onSelect={() => handleCategoryChange(0)}
+									onSelect={() => handleCategoryChange(0)}
 								>
 									Geen Klant
 								</Dropdown.Item>
@@ -42,11 +49,9 @@ export default function Create({}) {
 									<Dropdown.Item
 										className="DropdownDarkButtonCenteredItem"
 										key={cat.id}
-										// onSelect={() => handleCategoryChange(cat.id)}
+										onSelect={() => handleCategoryChange(cat.id)}
 									>
 										{`${cat.firstname}`}
-										{/*{cat.parent_id ? `${getParentName(cat.parent_id)}/` : null}*/}
-										{/*{cat.name}*/}
 									</Dropdown.Item>
 								))}
 								<Dropdown.Separator className="my-1 h-px bg-gray-200"/>
@@ -55,7 +60,10 @@ export default function Create({}) {
 					</Dropdown.Root>
 				</div>
 				<div className = "pb-8">
-					testjiosj
+					Datum en tijd selecteren
+				</div>
+				<div>
+					Soort behandeling
 				</div>
 			</form>
 		</>
