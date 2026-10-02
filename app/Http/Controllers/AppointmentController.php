@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,7 +21,13 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Appointments/Create');
+        // ok goed dan is dit maar een object >:(
+        $Patients = User::query()->get()->where('role_id', 1)->values()->toArray();
+
+        return Inertia::render('Appointments/Create', [
+            'Customers' => $Patients,
+
+        ]);
     }
 
     /**

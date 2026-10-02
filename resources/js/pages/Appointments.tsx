@@ -3,6 +3,7 @@ import {Head, Link, usePage} from '@inertiajs/react'
 import {PageProps} from "@inertiajs/core";
 import {Appointment} from "@/types/Interfaces";
 import {PlaceholderPattern} from "@/components/ui/placeholder-pattern";
+import {PlusSquareIcon} from "lucide-react";
 
 interface Props extends PageProps {
 	Appointments: Appointment[];
@@ -16,13 +17,14 @@ export default function Appointments({}) {
 		<>
 			<Head title="Afspraken"/>
 			<div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
+				<div className="grid items-center auto-rows-min gap-4 md:grid-cols-3">
 					<Link
-						className="LayoutGrid"
+						className="LayoutGrid place-items-center h-full"
 						href="/appointments/create">
 						<h1>
 							Nieuwe afspraak
 						</h1>
+						<PlusSquareIcon/>
 					</Link>
 					<div className="LayoutGrid">
 						<h1>Aantal afspraken vandaag</h1>
