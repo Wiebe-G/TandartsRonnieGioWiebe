@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('treatment_id')->constrained('treatment', 'treatment_id')->restrictOnDelete();
 
             $table->primary(['appointment_id', 'treatment_id']);
+			$table->timestamps();
         });
     }
 

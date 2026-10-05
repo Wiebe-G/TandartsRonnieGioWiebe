@@ -1,4 +1,3 @@
-import Layout from '@/layouts/app-layout'
 import {Head, router, usePage} from '@inertiajs/react'
 import {PageProps} from "@inertiajs/core";
 import {User} from "@/types/Interfaces";
@@ -34,15 +33,19 @@ export default function Create({}) {
 			alert("Geen klant geselecteerd");
 			return;
 		}
-		if(statefulDate.getDate() < 10) {
-			alert("Verkeerde datum");
-			return;
-		}
+		// check voor of datum in het verleden is
 		router.post(
 			`/appointments/create`,
 			{
 				Customer_id: selectedUser?.id ?? 0,
+				Dentist_id: 1,
+				Assistant_id: 1,
 				Date: statefulDate,
+				/* nu even type op routine, maar dit moet naar een dropdown met alle treatments
+				 die medewerkers hebben aangemaakt, en dan die id
+				 en die dan linken naar de treatments tabel
+				*/
+				Type: 'Routine',
 			}
 		)
 	}

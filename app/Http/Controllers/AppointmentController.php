@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -21,7 +23,7 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        // ok goed dan is dit maar een object >:(
+        // oké goed dan is dit maar een object >:(
         $Patients = User::query()->get()->where('role_id', 1)->values()->toArray();
 
         return Inertia::render('Appointments/Create', [
@@ -35,7 +37,31 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request);
+        $validated = $request->validate([
+            'Customer_id' => ['required', 'exists:users,id'],
+            'Dentist_id' => ['required', 'exists:users,id'],
+            'Assistant_id' => ['required', 'exists:users,id'],
+            'Date' => ['required', 'date'],
+            'Type' => ['required'],
+        ]);
+
+        $Datum = $validated['Date'];
+        $tijd = Carbon::parse($Datum)->timezone('Europe/Amsterdam');
+
+        $Customer = User::query()->find($request->Customer_id);
+        Appointment::create([
+            'customer_id' => $Customer->id,
+            'dentist_id' => $validated['Dentist_id'],
+            'assistant_id' => $validated['Assistant_id'],
+            'date' => $tijd->toDateString(),
+            'starttime' => $tijd->toTimeString(),
+            // zet endtime naar starttime + hoe lang de afspraak zou duren
+            'endtime' => $tijd->toTimeString(),
+            'status' => 'Nog niet denk ik idk',
+            'note' => 'Dit is een test note ',
+        ]);
+
+        return redirect()->route('appointments')->with('success', 'Appointment succesvol toegevoegd');
     }
 
     /**

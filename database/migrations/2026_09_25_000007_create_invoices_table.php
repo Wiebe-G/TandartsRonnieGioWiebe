@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('appointment_id')->constrained('appointment', 'appointment_id')->restrictOnDelete();
             $table->date('invoicedate');
             $table->date('expiration_date');
+			$table->timestamps();
         });
     }
 
