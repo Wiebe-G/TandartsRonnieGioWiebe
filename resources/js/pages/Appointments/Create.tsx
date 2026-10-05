@@ -87,7 +87,7 @@ export default function Create({}) {
 				<div className = "text-center">
 					<label htmlFor="date">Kies een datum: </label>
 					<br/>
-					<input type="date" id="date" name="date" onChange={handleUpdateDate} />
+					<input type="datetime-local" id="date" name="date" onChange={handleUpdateDate} />
 				</div>
 				<div className = "">
 					Soort behandeling
