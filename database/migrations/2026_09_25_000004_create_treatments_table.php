@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('price', 8, 2);
             $table->unsignedSmallInteger('duration'); // minutes
             $table->boolean('active')->default(true);
-			$table->timestamps();
+            $table->timestamps();
         });
     }
 

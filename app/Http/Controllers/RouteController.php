@@ -14,4 +14,11 @@ class RouteController extends Controller
             'Appointments' => Appointment::all(),
         ]);
     }
+
+    public function treatments()
+    {
+        return Inertia::render('Treatments', [
+
+        ]);
+    }
 }

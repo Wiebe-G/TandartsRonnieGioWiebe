@@ -39,6 +39,11 @@ export function AppSidebar() {
                         href: '/appointments',
                         icon: LayoutGrid
                     },
+					{
+						title: 'Behandelingen',
+						href: '/treatments',
+						icon: LayoutGrid
+					}
                 ] : []
         )
     ];

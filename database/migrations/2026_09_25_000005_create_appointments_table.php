@@ -18,7 +18,7 @@ return new class extends Migration
             $table->time('endtime');
             $table->string('status')->default('scheduled');
             $table->text('note')->nullable();
-			$table->timestamps();
+            $table->timestamps();
         });
     }
 
