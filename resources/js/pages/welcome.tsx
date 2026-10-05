@@ -12,7 +12,13 @@ export default function Welcome() {
         <>
             <Head title="Welcome" />
             <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#f3f3f0] lg:justify-center lg:p-8 dark:bg-[#3d0f0f] 
-            fixed top-0 left-0 right-0">
+            fixed top-0 left-0 right-0
+            
+            "style={{
+                        backgroundImage: "url('/storage/Tandartspraktijk.jpg')",
+                        backgroundSize: '60% 100%',
+                        backgroundPosition: 'center',
+                    }}>
                 <header className="mb-6 w-full max-w--83.75 text-sm not-has-[nav]:hidden lg:max-w-4xl">
                     <nav className="flex items-center justify-end gap-4 fixed top-0 left-0 right-0 border-2">
                         {auth.user ? (
@@ -40,8 +46,13 @@ export default function Welcome() {
                         )}
                     </nav>
                 </header>
-                <h1>
-                    Welcome to the application!
+                <h1
+                    className="text-left     text-2xl font-bold text-[#1b1b18] dark:text-[#5758b3]"
+                    
+                >
+                    Welkom bij ons geweldige Tandartspraktijk! We zijn verheugd om u te verwelkomen op onze website.<br />
+                     Hier kunt u gemakkelijk een afspraak maken, meer te weten komen over onze diensten en ons team van deskundige tandartsen ontmoeten. <br />
+                     Uw glimlach is onze prioriteit, en we kijken ernaar uit om u te helpen bij het bereiken van een gezonde en stralende lach!
                 </h1>
                 <div className="hidden h-14.5 lg:block"></div>
             </div>
