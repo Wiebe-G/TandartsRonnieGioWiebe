@@ -1,6 +1,6 @@
 import {Head, router, usePage} from '@inertiajs/react'
 import {PageProps} from "@inertiajs/core";
-import {User} from "@/types/Interfaces";
+import {Treatment, User} from "@/types/Interfaces";
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {ChevronDownIcon} from "lucide-react";
 import React, {useState} from "react";
@@ -8,13 +8,16 @@ import React, {useState} from "react";
 interface Props extends PageProps {
 	// Customers blijft een object hoe hard ik ook Laravel probeer te vertellen dat het een array moet zijn
 	Customers: User[];
+	Treatments: Treatment[];
 }
 
 export default function Create({}) {
-	const {Customers} = usePage<Props>().props;
+	const { Customers, Treatments } = usePage<Props>().props;
 
 	const [selectedUser, setSelectedUser] = useState<User>();
+	const [selectedTreatmentId, setSelectedTreatmentId] = useState<number>();
 	const [statefulDate, setStatefulDate] = useState(new Date());
+	const [note, setNote] = useState("");
 
 	const handleCategoryChange = (id: number): void => {
 		setSelectedUser(Customers.find((cat) => cat.id === id));
@@ -38,16 +41,18 @@ export default function Create({}) {
 			`/appointments/create`,
 			{
 				Customer_id: selectedUser?.id ?? 0,
+				// tandarts en assistent moeten nog
 				Dentist_id: 1,
 				Assistant_id: 1,
 				Date: statefulDate,
-				/* nu even type op routine, maar dit moet naar een dropdown met alle treatments
-				 die medewerkers hebben aangemaakt, en dan die id
-				 en die dan linken naar de treatments tabel
-				*/
-				Type: 'Routine',
+				Type: selectedTreatmentId,
+				Note: note
 			}
 		)
+	}
+
+	const returnSelectedTreatment = (id: number) => {
+		return Treatments.find((tr) => tr.treatment_id === id);
 	}
 
 	return (
@@ -93,7 +98,43 @@ export default function Create({}) {
 					<input type="datetime-local" id="date" name="date" onChange={handleUpdateDate} />
 				</div>
 				<div className = "">
-					Soort behandeling
+					<Dropdown.Root>
+						<Dropdown.Trigger asChild>
+							<button type={'button'}
+							        className="flex items-center rounded bg-blue-500 px-4 py-2 text-white" value={0}>
+								{selectedTreatmentId ? `${returnSelectedTreatment(selectedTreatmentId)?.name}` : 'Selecteer een behandeling'}
+								<ChevronDownIcon className="ml-2 size-4"/>
+							</button>
+						</Dropdown.Trigger>
+
+						<Dropdown.Portal>
+							<Dropdown.Content
+								className="flex flex-col items-center z-50 min-w-55 rounded-md border bg-white p-1 shadow-lg dark:bg-slate-800">
+								<Dropdown.Item className={'DropdownDarkButtonCenteredItem'}
+								               onSelect={() => setSelectedTreatmentId(0)}
+								>
+									Geen behandeling
+								</Dropdown.Item>
+								{Treatments.map((tr: Treatment) => (
+									<Dropdown.Item
+										className="DropdownDarkButtonCenteredItem"
+										key={tr.treatment_id}
+										onSelect={() => setSelectedTreatmentId(tr.treatment_id)}
+									>
+										{`${tr.name}`}
+									</Dropdown.Item>
+								))}
+								<Dropdown.Separator className="my-1 h-px bg-gray-200"/>
+							</Dropdown.Content>
+						</Dropdown.Portal>
+					</Dropdown.Root>
+				</div>
+				<div className = "flex flex-col text-center">
+					<span>Notitie</span>
+					<textarea name="note" id="" className="resize-none border-2 border-blue-400"
+							  onChange={(e) => setNote(e.currentTarget.value)}>
+
+					</textarea>
 				</div>
 				<div className = "bg-indigo-500 flex justify-center place-items-center p-8 rounded-2xl hover:font-bold"
 				onClick={handleCreateAppointment}>

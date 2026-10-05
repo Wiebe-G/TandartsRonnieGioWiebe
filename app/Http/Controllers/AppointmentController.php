@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\Treatment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,10 +26,11 @@ class AppointmentController extends Controller
     {
         // oké goed dan is dit maar een object >:(
         $Patients = User::query()->get()->where('role_id', 1)->values()->toArray();
+        $Treatments = Treatment::query()->get()->where('active', true)->values()->toArray();
 
         return Inertia::render('Appointments/Create', [
             'Customers' => $Patients,
-
+            'Treatments' => $Treatments,
         ]);
     }
 

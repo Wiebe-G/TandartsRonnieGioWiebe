@@ -27,3 +27,11 @@ export interface User {
     address: string;
 }
 
+export interface Treatment {
+	treatment_id: number;
+	name: string;
+	description: string;
+	price: string;
+	duration: number;
+
+}
