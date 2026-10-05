@@ -7,6 +7,7 @@ use App\Models\Treatment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AppointmentController extends Controller
@@ -44,23 +45,29 @@ class AppointmentController extends Controller
             'Dentist_id' => ['required', 'exists:users,id'],
             'Assistant_id' => ['required', 'exists:users,id'],
             'Date' => ['required', 'date'],
-            'Type' => ['required'],
+            'Type' => ['required', 'exists:treatment,treatment_id'],
+            'Note' => ['required', 'string', 'max:255'],
         ]);
 
         $Datum = $validated['Date'];
         $tijd = Carbon::parse($Datum)->timezone('Europe/Amsterdam');
+        $treatment = Treatment::query()->firstWhere('treatment_id', $validated['Type']);
 
         $Customer = User::query()->find($request->Customer_id);
-        Appointment::create([
+        $appointment = Appointment::create([
             'customer_id' => $Customer->id,
             'dentist_id' => $validated['Dentist_id'],
             'assistant_id' => $validated['Assistant_id'],
             'date' => $tijd->toDateString(),
             'starttime' => $tijd->toTimeString(),
-            // zet endtime naar starttime + hoe lang de afspraak zou duren
-            'endtime' => $tijd->toTimeString(),
+            'endtime' => $tijd->addMinutes($treatment->duration)->toTimeString(),
             'status' => 'Nog niet denk ik idk',
-            'note' => 'Dit is een test note ',
+            'note' => $validated['Note'],
+        ]);
+
+        DB::table('appointment_treatment')->insert([
+            'appointment_id' => $appointment->id,
+            'treatment_id' => $validated['Type'],
         ]);
 
         return redirect()->route('appointments')->with('success', 'Appointment succesvol toegevoegd');
