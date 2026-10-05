@@ -1,10 +1,10 @@
 import Layout from '@/layouts/app-layout'
-import {Head, usePage} from '@inertiajs/react'
+import {Head, router, usePage} from '@inertiajs/react'
 import {PageProps} from "@inertiajs/core";
 import {User} from "@/types/Interfaces";
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
 import {ChevronDownIcon} from "lucide-react";
-import {useState} from "react";
+import React, {useState} from "react";
 
 interface Props extends PageProps {
 	// Customers blijft een object hoe hard ik ook Laravel probeer te vertellen dat het een array moet zijn
@@ -14,25 +14,50 @@ interface Props extends PageProps {
 export default function Create({}) {
 	const {Customers} = usePage<Props>().props;
 
-	console.log(Customers);
-
 	const [selectedUser, setSelectedUser] = useState<User>();
+	const [statefulDate, setStatefulDate] = useState(new Date());
 
 	const handleCategoryChange = (id: number): void => {
 		setSelectedUser(Customers.find((cat) => cat.id === id));
+	}
+
+	const handleUpdateDate = (e: React.ChangeEvent<HTMLInputElement>): void => {
+		setStatefulDate(new Date(e.currentTarget.value));
+	}
+
+	const handleCreateAppointment = async() => {
+		if(!selectedUser) {
+			alert("Geen klant geselecteerd");
+			return;
+		}
+		if(selectedUser && selectedUser.id == 0) {
+			alert("Geen klant geselecteerd");
+			return;
+		}
+		if(statefulDate.getDate() < 10) {
+			alert("Verkeerde datum");
+			return;
+		}
+		router.post(
+			`/appointments/create`,
+			{
+				Customer_id: selectedUser?.id ?? 0,
+				Date: statefulDate,
+			}
+		)
 	}
 
 	return (
 		<>
 			<Head title="Afspraak maken"/>
 			{/*	Dropdown met alle klanten, datum en tijd, soort behandeling*/}
-			<form action="" className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4">
-				<div className = "pb-8">
+			<form action="" className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4 w-full gap-y-8">
+				<div className = "min-w-[50vw] justify-items-center">
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
 							<button type={'button'}
 							        className="flex items-center rounded bg-blue-500 px-4 py-2 text-white" value={0}>
-								{selectedUser ? selectedUser.firstname : 'Selecteer een klant'}
+								{selectedUser ?  `${selectedUser.firstname} ${selectedUser.lastname}` : 'Selecteer een klant'}
 								<ChevronDownIcon className="ml-2 size-4"/>
 							</button>
 						</Dropdown.Trigger>
@@ -51,7 +76,7 @@ export default function Create({}) {
 										key={cat.id}
 										onSelect={() => handleCategoryChange(cat.id)}
 									>
-										{`${cat.firstname}`}
+										{`${cat.firstname} ${cat.lastname}`}
 									</Dropdown.Item>
 								))}
 								<Dropdown.Separator className="my-1 h-px bg-gray-200"/>
@@ -59,11 +84,17 @@ export default function Create({}) {
 						</Dropdown.Portal>
 					</Dropdown.Root>
 				</div>
-				<div className = "pb-8">
-					Datum en tijd selecteren
+				<div className = "text-center">
+					<label htmlFor="date">Kies een datum: </label>
+					<br/>
+					<input type="date" id="date" name="date" onChange={handleUpdateDate} />
 				</div>
-				<div>
+				<div className = "">
 					Soort behandeling
+				</div>
+				<div className = "bg-indigo-500 flex justify-center place-items-center p-8 rounded-2xl hover:font-bold"
+				onClick={handleCreateAppointment}>
+					Bevestig afspraak
 				</div>
 			</form>
 		</>

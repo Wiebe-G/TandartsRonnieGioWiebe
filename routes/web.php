@@ -15,6 +15,8 @@ Route::middleware(['auth', 'Employee'])->group(function () {
         ->name('appointments');
     Route::get('/appointments/create', [AppointmentController::class, 'create'])
         ->name('appointments.create');
+    Route::post('/appointments/create', [AppointmentController::class, 'store'])
+        ->name('appointments.store');
 });
 
 require __DIR__.'/settings.php';
