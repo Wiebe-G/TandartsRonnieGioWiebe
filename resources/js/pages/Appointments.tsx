@@ -3,8 +3,7 @@ import {Head, Link, usePage} from '@inertiajs/react'
 import {PageProps} from "@inertiajs/core";
 import {Appointment} from "@/types/Interfaces";
 import {PlaceholderPattern} from "@/components/ui/placeholder-pattern";
-import {PlusSquareIcon} from "lucide-react";
-import {appointments} from "@/routes";
+import { PlusSquareIcon} from "lucide-react";
 
 interface Props extends PageProps {
 	Appointments: Appointment[];
@@ -22,8 +21,7 @@ export default function Appointments({}) {
 			}
 		})
 
-	console.log(AppointmentsToday);
-
+	console.log(Appointments);
 	return (
 		<>
 			<Head title="Afspraken"/>
@@ -37,12 +35,15 @@ export default function Appointments({}) {
 						</h1>
 						<PlusSquareIcon/>
 					</Link>
-					<div className="LayoutGrid">
-						<h1>Aantal afspraken vandaag</h1>
+					<div className="LayoutGrid text-center">
+						<h1>Afspraken vandaag:</h1>
 						{AppointmentsToday.map(app => (
-							<div key={app.appointment_id}>
-								<span>{app.customer.firstname}</span>
-							</div>
+							<Link href={`/appointments/view/${app.appointment_id}`}
+							      key={app.appointment_id}
+							      className="grid auto-cols-min md:grid-cols-2">
+								<span>{app.treatment?.name ?? "Onbekende behandeling"}</span>
+								<span>{app.customer.firstname} {app.customer.lastname}</span>
+							</Link>
 						))}
 					</div>
 					<div className="LayoutGrid">

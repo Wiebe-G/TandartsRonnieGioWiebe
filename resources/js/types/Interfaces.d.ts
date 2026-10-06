@@ -9,6 +9,7 @@ export interface Appointment {
     status: string;
     note: string;
 	customer: User;
+	treatment: Treatment;
 }
 
 export interface Role {

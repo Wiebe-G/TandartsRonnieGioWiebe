@@ -11,8 +11,11 @@ class RouteController extends Controller
     //
     public function appointments()
     {
+        $Appointments = Appointment::with(['customer', 'treatment'])->get()->values();
+
         return Inertia::render('Appointments', [
-            'Appointments' => Appointment::with(['customer', 'treatment'])->get()->values(),
+            'Appointments' => $Appointments,
+            'Treatments' => Treatment::all()->values(),
         ]);
     }
 

@@ -40,8 +40,7 @@ export default function Create({}) {
 		router.post(
 			`/appointments/create`,
 			{
-				Customer_id: selectedUser?.id ?? 0,
-				// tandarts en assistent moeten nog
+				Customer_id: selectedUser.id,
 				Dentist_id: 1,
 				Assistant_id: 1,
 				Date: statefulDate,
