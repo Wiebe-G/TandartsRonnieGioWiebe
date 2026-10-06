@@ -12,7 +12,7 @@ class RouteController extends Controller
     public function appointments()
     {
         return Inertia::render('Appointments', [
-            'Appointments' => Appointment::all(),
+            'Appointments' => Appointment::with(['customer', 'treatment'])->get()->values(),
         ]);
     }
 

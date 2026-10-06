@@ -12,7 +12,7 @@ use Illuminate\Support\HigherOrderCollectionProxy;
  *
  * @property HigherOrderCollectionProxy|mixed $duration
  */
-#[Table('Treatment')]
+#[Table('treatment')]
 #[Fillable('name', 'description', 'price', 'duration', 'active')]
 
 class Treatment extends Model

@@ -13,8 +13,6 @@ interface Props extends PageProps {
 export default function Appointments({}) {
 	const {Appointments} = usePage<Props>().props;
 
-	console.log(`Er zijn een totaal van ${Appointments.length} afspraken`);
-
 	// filter naar appointments waar date == new Date()
 	let AppointmentsToday: Appointment[] = [];
 	const SetAppointmentsToday =
@@ -24,7 +22,7 @@ export default function Appointments({}) {
 			}
 		})
 
-	console.log( AppointmentsToday);
+	console.log(AppointmentsToday);
 
 	return (
 		<>
@@ -41,6 +39,11 @@ export default function Appointments({}) {
 					</Link>
 					<div className="LayoutGrid">
 						<h1>Aantal afspraken vandaag</h1>
+						{AppointmentsToday.map(app => (
+							<div key={app.appointment_id}>
+								<span>{app.customer.firstname}</span>
+							</div>
+						))}
 					</div>
 					<div className="LayoutGrid">
 						<h1>Afgeronde afspraken</h1>

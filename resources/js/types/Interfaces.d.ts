@@ -8,6 +8,7 @@ export interface Appointment {
     endtime: Date;
     status: string;
     note: string;
+	customer: User;
 }
 
 export interface Role {
