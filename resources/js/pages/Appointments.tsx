@@ -4,6 +4,7 @@ import {PageProps} from "@inertiajs/core";
 import {Appointment} from "@/types/Interfaces";
 import {PlaceholderPattern} from "@/components/ui/placeholder-pattern";
 import {PlusSquareIcon} from "lucide-react";
+import {appointments} from "@/routes";
 
 interface Props extends PageProps {
 	Appointments: Appointment[];
@@ -13,6 +14,18 @@ export default function Appointments({}) {
 	const {Appointments} = usePage<Props>().props;
 
 	console.log(`Er zijn een totaal van ${Appointments.length} afspraken`);
+
+	// filter naar appointments waar date == new Date()
+	let AppointmentsToday: Appointment[] = [];
+	const SetAppointmentsToday =
+		Appointments.map(app => {
+			if (app.date.toString() == new Date().toISOString().split("T")[0]) {
+				AppointmentsToday = [...AppointmentsToday, app]
+			}
+		})
+
+	console.log( AppointmentsToday);
+
 	return (
 		<>
 			<Head title="Afspraken"/>
