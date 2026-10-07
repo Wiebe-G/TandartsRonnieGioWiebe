@@ -25,7 +25,7 @@ export default function Treatments({}) {
 					<div className="LayoutGrid">
 						<span className="text-center">Alle behandelingen:</span>
 						{Treatments.map((treatment: Treatment) => (
-							<div className="border-2 border-red-500 flex w-full px-2">
+							<div className="border-2 border-red-500 flex w-full px-2" key={treatment.treatment_id}>
 								<span>{treatment.name}</span>
 								<span className="ml-auto"><Edit /></span>
 							</div>

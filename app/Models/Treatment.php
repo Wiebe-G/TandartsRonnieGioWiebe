@@ -17,5 +17,6 @@ use Illuminate\Support\HigherOrderCollectionProxy;
 
 class Treatment extends Model
 {
+    protected $primaryKey = 'treatment_id';
     //
 }

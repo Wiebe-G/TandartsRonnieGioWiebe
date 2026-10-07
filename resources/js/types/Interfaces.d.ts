@@ -9,7 +9,7 @@ export interface Appointment {
     status: string;
     note: string;
 	customer: User;
-	treatment: Treatment;
+	treatments: Treatment[];
 }
 
 export interface Role {

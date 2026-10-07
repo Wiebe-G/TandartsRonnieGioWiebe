@@ -66,7 +66,7 @@ class AppointmentController extends Controller
         ]);
 
         DB::table('appointment_treatment')->insert([
-            'appointment_id' => $appointment->id,
+            'appointment_id' => $appointment->appointment_id,
             'treatment_id' => $validated['Type'],
         ]);
 

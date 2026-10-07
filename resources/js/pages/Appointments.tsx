@@ -21,7 +21,6 @@ export default function Appointments({}) {
 			}
 		})
 
-	console.log(Appointments);
 	return (
 		<>
 			<Head title="Afspraken"/>
@@ -41,7 +40,7 @@ export default function Appointments({}) {
 							<Link href={`/appointments/view/${app.appointment_id}`}
 							      key={app.appointment_id}
 							      className="grid auto-cols-min md:grid-cols-2">
-								<span>{app.treatment?.name ?? "Onbekende behandeling"}</span>
+								<span>{app.treatments[0]?.name ?? "Onbekende behandeling"}</span>
 								<span>{app.customer.firstname} {app.customer.lastname}</span>
 							</Link>
 						))}
