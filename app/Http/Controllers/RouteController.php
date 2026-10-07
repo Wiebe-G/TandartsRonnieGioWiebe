@@ -15,7 +15,6 @@ class RouteController extends Controller
 
         return Inertia::render('Appointments', [
             'Appointments' => $Appointments,
-            'Treatments' => Treatment::all()->values(),
         ]);
     }
 
