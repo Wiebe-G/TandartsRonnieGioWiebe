@@ -9,15 +9,32 @@ interface Props extends PageProps {
 	// Customers blijft een object hoe hard ik ook Laravel probeer te vertellen dat het een array moet zijn
 	Customers: User[];
 	Treatments: Treatment[];
+	Users: User[];
 }
 
 export default function Create({}) {
-	const { Customers, Treatments } = usePage<Props>().props;
+	const { Customers, Treatments, Users } = usePage<Props>().props;
 
 	const [selectedUser, setSelectedUser] = useState<User>();
 	const [selectedTreatmentId, setSelectedTreatmentId] = useState<number>();
 	const [statefulDate, setStatefulDate] = useState(new Date());
 	const [note, setNote] = useState("");
+	const [selectedDentist, setSelectedDentist] = useState(0);
+
+	let Dentists: User[] = [];
+	let Assistants: User[] = [];
+
+	console.log(Customers)
+	Users.map((user) => {
+		if(user.role_id == 2)
+		{
+			Dentists = [... Dentists, user]
+		}
+		if(user.role_id == 3)
+		{
+			Assistants = [... Assistants, user]
+		}
+	})
 
 	const handleCategoryChange = (id: number): void => {
 		setSelectedUser(Customers.find((cat) => cat.id === id));
@@ -41,7 +58,7 @@ export default function Create({}) {
 			`/appointments/create`,
 			{
 				Customer_id: selectedUser.id,
-				Dentist_id: 1,
+				Dentist_id: selectedDentist,
 				Assistant_id: 1,
 				Date: statefulDate,
 				Type: selectedTreatmentId,
@@ -52,6 +69,10 @@ export default function Create({}) {
 
 	const returnSelectedTreatment = (id: number) => {
 		return Treatments.find((tr) => tr.treatment_id === id);
+	}
+
+	const returnSelectedDentist = (id: number) => {
+		return Dentists.find((tr) => tr.id === id);
 	}
 
 	return (
@@ -90,6 +111,42 @@ export default function Create({}) {
 							</Dropdown.Content>
 						</Dropdown.Portal>
 					</Dropdown.Root>
+				</div>
+				<div>
+					<Dropdown.Root>
+						<Dropdown.Trigger asChild>
+							<button type={'button'}
+									className="flex items-center rounded bg-blue-500 px-4 py-2 text-white"
+									value={0}>
+								{selectedDentist ? `${returnSelectedDentist(selectedDentist)?.firstname}` : "Geen tandarts"}
+								<ChevronDownIcon className="ml-2 size-4"/>
+							</button>
+						</Dropdown.Trigger>
+
+						<Dropdown.Portal>
+							<Dropdown.Content
+								className="flex flex-col items-center z-50 min-w-55 rounded-md border bg-white p-1 shadow-lg dark:bg-slate-800">
+								<Dropdown.Item className={'DropdownDarkButtonCenteredItem'}
+								               onSelect={() => setSelectedDentist(0)}
+								>
+									<span>Geen tandarts</span>
+								</Dropdown.Item>
+								{Dentists.map((d: User) => (
+									<Dropdown.Item
+										className="DropdownDarkButtonCenteredItem"
+										key={d.id}
+										onSelect={() => setSelectedDentist(d.id)}
+									>
+										{`${d.firstname} ${d.lastname}`}
+									</Dropdown.Item>
+								))}
+								<Dropdown.Separator className="my-1 h-px bg-gray-200"/>
+							</Dropdown.Content>
+						</Dropdown.Portal>
+					</Dropdown.Root>
+				</div>
+				<div>
+					<span>Kies een assistent</span>
 				</div>
 				<div className = "text-center">
 					<label htmlFor="date">Kies een datum: </label>

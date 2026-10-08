@@ -32,6 +32,7 @@ class AppointmentController extends Controller
         return Inertia::render('Appointments/Create', [
             'Customers' => $Patients,
             'Treatments' => $Treatments,
+            'Users' => User::query()->get()->values(),
         ]);
     }
 
@@ -70,7 +71,8 @@ class AppointmentController extends Controller
             'treatment_id' => $validated['Type'],
         ]);
 
-        return redirect()->route('appointments')->with('success', 'Appointment succesvol toegevoegd');
+        return redirect()->route('appointments')
+            ->with('success', 'Appointment succesvol toegevoegd');
     }
 
     /**
@@ -78,7 +80,15 @@ class AppointmentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $appointment = Appointment::query()
+            ->where('appointment_id', $id)
+            ->with(['customer', 'treatments'])
+            ->get()
+            ->first();
+
+        return Inertia::render('Appointments/Show', [
+            'Appointment' => $appointment,
+        ]);
     }
 
     /**
