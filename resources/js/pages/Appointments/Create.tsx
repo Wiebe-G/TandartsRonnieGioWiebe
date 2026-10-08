@@ -20,17 +20,17 @@ export default function Create({}) {
 	const [statefulDate, setStatefulDate] = useState(new Date());
 	const [note, setNote] = useState("");
 	const [selectedDentist, setSelectedDentist] = useState(0);
+	const [selectedAssistant, setSelectedAssistant] = useState(0);
 
 	let Dentists: User[] = [];
 	let Assistants: User[] = [];
 
-	console.log(Customers)
 	Users.map((user) => {
 		if(user.role_id == 2)
 		{
 			Dentists = [... Dentists, user]
 		}
-		if(user.role_id == 3)
+		if(user.role_id == 4)
 		{
 			Assistants = [... Assistants, user]
 		}
@@ -59,7 +59,7 @@ export default function Create({}) {
 			{
 				Customer_id: selectedUser.id,
 				Dentist_id: selectedDentist,
-				Assistant_id: 1,
+				Assistant_id: selectedAssistant,
 				Date: statefulDate,
 				Type: selectedTreatmentId,
 				Note: note
@@ -73,6 +73,10 @@ export default function Create({}) {
 
 	const returnSelectedDentist = (id: number) => {
 		return Dentists.find((tr) => tr.id === id);
+	}
+
+	const returnSelectedAssistant = (id: number) => {
+		return Assistants.find((tr) => tr.id === id);
 	}
 
 	return (
@@ -145,15 +149,47 @@ export default function Create({}) {
 						</Dropdown.Portal>
 					</Dropdown.Root>
 				</div>
-				<div>
-					<span>Kies een assistent</span>
+				<div id="choose-assistand">
+					<Dropdown.Root>
+						<Dropdown.Trigger asChild>
+							<button type={'button'}
+							        className="flex items-center rounded bg-blue-500 px-4 py-2 text-white"
+							        value={0}>
+								{selectedAssistant ?
+									`${returnSelectedAssistant(selectedAssistant)?.firstname}`
+									: "Geen assistent"}
+								<ChevronDownIcon className="ml-2 size-4"/>
+							</button>
+						</Dropdown.Trigger>
+
+						<Dropdown.Portal>
+							<Dropdown.Content
+								className="flex flex-col items-center z-50 min-w-55 rounded-md border bg-white p-1 shadow-lg dark:bg-slate-800">
+								<Dropdown.Item className={'DropdownDarkButtonCenteredItem'}
+								               onSelect={() => setSelectedAssistant(0)}
+								>
+									<span>Geen assistent</span>
+								</Dropdown.Item>
+								{Assistants.map((as: User) => (
+									<Dropdown.Item
+										className="DropdownDarkButtonCenteredItem"
+										key={as.id}
+										onSelect={() => setSelectedAssistant(as.id)}
+									>
+										{`${as.firstname} ${as.lastname}`}
+									</Dropdown.Item>
+								))}
+								<Dropdown.Separator className="my-1 h-px bg-gray-200"/>
+							</Dropdown.Content>
+						</Dropdown.Portal>
+					</Dropdown.Root>
 				</div>
-				<div className = "text-center">
+				<div id="choose-date" className = "text-center">
 					<label htmlFor="date">Kies een datum: </label>
 					<br/>
 					<input type="datetime-local" id="date" name="date" onChange={handleUpdateDate} />
 				</div>
-				<div className = "">
+				<div id="select-treatment" className = "">
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
 							<button type={'button'}
