@@ -117,10 +117,13 @@ class AppointmentController extends Controller
 
         $Appointment->update([
             'note' => $validated['Note'],
+            'date' => $validated['Date'],
             'starttime' => $validated['Starttime'],
             'endtime' => $endTime,
             'status' => 'Nog niet denk ik idk',
         ]);
+
+        return redirect()->route('appointments')->with('success', 'Afspraak succesvol aangepast');
     }
 
     /**
