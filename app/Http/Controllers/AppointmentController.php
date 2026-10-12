@@ -138,6 +138,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::query()->find($validated['id']);
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
         $appointment->delete();
-		return redirect()->route('appointments')->with('success', 'Afspraak succesvol verwijderd');
+
+        return redirect()->route('appointments')->with('success', 'Afspraak succesvol verwijderd');
     }
 }
