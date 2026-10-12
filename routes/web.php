@@ -20,6 +20,8 @@ Route::middleware(['auth', 'Employee'])->group(function () {
         ->name('appointments.store');
     Route::get('/appointments/view/{appointment}', [AppointmentController::class, 'show'])
         ->name('appointments.view');
+    Route::post('/appointments/update', [AppointmentController::class, 'update'])
+        ->name('appointments.update');
 
     Route::get('/treatments', [RouteController::class, 'treatments'])
         ->name('treatments');

@@ -102,9 +102,25 @@ class AppointmentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'Appointment_Id' => ['required', 'exists:appointment,appointment_id'],
+            'Note' => ['required', 'string', 'max:255'],
+            'Date' => ['required', 'string'],
+            'Starttime' => ['required', 'string'],
+        ]);
+        $Appointment = Appointment::query()->with('treatments')->find($validated['Appointment_Id']);
+
+        $tijd = Carbon::parse($validated['Starttime']);
+        $endTime = $tijd->addMinutes($Appointment['Treatments'][0]['duration'])->toTimeString();
+
+        $Appointment->update([
+            'note' => $validated['Note'],
+            'starttime' => $validated['Starttime'],
+            'endtime' => $endTime,
+            'status' => 'Nog niet denk ik idk',
+        ]);
     }
 
     /**
