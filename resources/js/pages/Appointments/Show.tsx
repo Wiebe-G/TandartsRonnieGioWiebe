@@ -3,7 +3,7 @@ import {PageProps} from "@inertiajs/core";
 import {Appointment, Treatment, User} from "@/types/Interfaces";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import {ChevronDownIcon} from "lucide-react";
-import React, { useState } from "react";
+import React, {useState} from "react";
 
 interface Props extends PageProps {
 	Appointment: Appointment
@@ -50,31 +50,33 @@ export default function Show({}) {
 				<div>Soort behandeling: {Appointment.treatments[0].name}</div>
 				<label htmlFor="note">Notitie: </label>
 				<textarea className="w-4/5 flex justify-center text-center h-full" readOnly={!editMode}
-						  defaultValue={note}
-						  onChange={(e) => setNote(e.target.value) }
+				          defaultValue={note}
+				          onChange={(e) => setNote(e.target.value)}
 				>
 				</textarea>
-				<div>
+				<div className="flex flex-col gap-y-8">
 					<label htmlFor="date">Datum: </label>
 					<input type="date" defaultValue={date} readOnly={!editMode}
-					onChange={(e) => setDate(e.target.value)}/>
+					       onChange={(e) => setDate(e.target.value)}/>
 
 					<label htmlFor="starttime">Begintijd: </label>
 					<input type="time" defaultValue={starttime} readOnly={!editMode}
-					onChange={(e) => setStarttime(e.target.value)}/>
+					       onChange={(e) => setStarttime(e.target.value)}/>
 
 					<label htmlFor="endtime">Eindtijd: </label>
 					<input type="time" defaultValue={Appointment.endtime.toString()} readOnly={true}/>
 				</div>
-				<button type="button" onClick={() => setEditMode(!editMode)}
-				className="bg-indigo-500 p-8 hover:font-bold">
-					{editMode ? "Stop met bewerken" : "Bewerk afspraak"}
-				</button>
-				<button type={"submit"}
-				        className="bg-indigo-500 p-8 hover:font-bold"
-						onClick={(e) => handleUpdateAppointment(e)}>
-					Sla bewerkingen op
-				</button>
+				<div className="flex gap-x-8">
+					<button type="button" onClick={() => setEditMode(!editMode)}
+					        className="bg-indigo-500 p-8 hover:font-bold">
+						{editMode ? "Stop met bewerken" : "Bewerk afspraak"}
+					</button>
+					<button type={"submit"}
+					        className="bg-indigo-500 p-8 hover:font-bold"
+					        onClick={(e) => handleUpdateAppointment(e)}>
+						Sla bewerkingen op
+					</button>
+				</div>
 			</form>
 		</>
 	)
