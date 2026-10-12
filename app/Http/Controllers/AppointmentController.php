@@ -7,6 +7,7 @@ use App\Models\Treatment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -129,8 +130,14 @@ class AppointmentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'id' => ['required', 'exists:appointment,appointment_id'],
+        ]);
+        $appointment = Appointment::query()->find($validated['id']);
+        abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
+        $appointment->delete();
+		return redirect()->route('appointments')->with('success', 'Afspraak succesvol verwijderd');
     }
 }

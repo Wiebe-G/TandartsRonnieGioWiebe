@@ -22,6 +22,8 @@ Route::middleware(['auth', 'Employee'])->group(function () {
         ->name('appointments.view');
     Route::post('/appointments/update', [AppointmentController::class, 'update'])
         ->name('appointments.update');
+    Route::post('/appointments/delete', [AppointmentController::class, 'destroy'])
+        ->name('appointments.delete');
 
     Route::get('/treatments', [RouteController::class, 'treatments'])
         ->name('treatments');

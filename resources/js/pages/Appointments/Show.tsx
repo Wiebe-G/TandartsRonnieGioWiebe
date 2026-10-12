@@ -42,6 +42,34 @@ export default function Show({}) {
 		})
 	}
 
+	const handleDeleteAppointment = () => {
+		if(!window.confirm("Weet je zeker dat je de afspraak wilt verwijderen?"))
+		{
+			return;
+		}
+		// if(!window.confirm("Ok maar weet je het zeker?"))
+		// {
+		// 	return;
+		// }
+		// if(!window.confirm("Weet je het ECHT heel zeker?"))
+		// {
+		// 	return;
+		// }
+		// if(!window.confirm("OK"))
+		// {
+		// 	return;
+		// }
+		router.post('/appointments/delete', {
+			id: Appointment.appointment_id,
+		}, {
+			onSuccess: () => {
+				console.log("Succesvol afspraak verwijderd.")
+			}, onError: () => {
+				console.error("Afspraak niet verwijderd.")
+			}
+		})
+	}
+
 	return (
 		<>
 			<Head title="Zie afspraak in"/>
@@ -68,13 +96,19 @@ export default function Show({}) {
 				</div>
 				<div className="flex gap-x-8">
 					<button type="button" onClick={() => setEditMode(!editMode)}
-					        className="bg-indigo-500 p-8 hover:font-bold">
+					        className="btn btn-primary">
 						{editMode ? "Stop met bewerken" : "Bewerk afspraak"}
 					</button>
 					<button type={"submit"}
-					        className="bg-indigo-500 p-8 hover:font-bold"
+					        className="btn btn-primary"
 					        onClick={(e) => handleUpdateAppointment(e)}>
 						Sla bewerkingen op
+					</button>
+					<button
+						type="button"
+						className="btn btn-error "
+						onClick={handleDeleteAppointment}>
+						Verwijderen
 					</button>
 				</div>
 			</form>
