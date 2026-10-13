@@ -12,14 +12,16 @@ return new class extends Migration
         Schema::create('role', function (Blueprint $table) {
             $table->id('role_id');
             $table->string('name')->unique();
+            $table->timestamps();
         });
 
         // Every user needs a role, so the roles are part of the schema itself.
         DB::table('role')->insert([
             ['name' => 'customer'],
             ['name' => 'dentist'],
-            ['name' => 'assistent'],
-            ['name' => 'admin']
+            ['name' => 'dental_hygienist'],
+            ['name' => 'assistant'],
+            ['name' => 'practice_manager'],
         ]);
     }
 

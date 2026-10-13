@@ -40,6 +40,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read Role $role
  * @property-read User|null $employee
+ *
+ * @method static create(array $array)
  */
 #[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'adress'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -72,14 +74,6 @@ class User extends Authenticatable
     protected function name(): Attribute
     {
         return Attribute::get(fn () => trim("{$this->firstname} {$this->lastname}"));
-    }
-
-    /**
-     * @return BelongsTo<Role, $this>
-     */
-    public function role(): BelongsTo
-    {
-        return $this->belongsTo(Role::class, 'role_id');
     }
 
     /**

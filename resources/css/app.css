@@ -6,7 +6,7 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
 @custom-variant dark (&:is(.dark *));
-
+@plugin "daisyui";
 @theme {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
@@ -140,4 +140,12 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+.LayoutGrid {
+	@apply border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border;
+}
+
+.DropdownDarkButtonCenteredItem {
+	@apply flex cursor-pointer justify-center rounded px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600;
 }

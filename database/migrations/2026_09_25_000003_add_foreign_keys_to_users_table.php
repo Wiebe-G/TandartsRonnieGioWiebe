@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->foreign('role_id')->references('role_id')->on('role')->restrictOnDelete();
-            $table->foreign('adress')->references('adress')->on('postcode')->cascadeOnUpdate()->nullOnDelete();
+            $table->foreign('address')->references('address')->on('postcode')->cascadeOnUpdate()->nullOnDelete();
         });
     }
 
@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['role_id']);
-            $table->dropForeign(['adress']);
+            $table->dropForeign(['address']);
         });
     }
 };

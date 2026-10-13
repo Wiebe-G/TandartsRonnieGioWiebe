@@ -27,7 +27,7 @@ class CreateNewUser implements CreatesNewUsers
 
         // Anyone who registers themselves is a customer; employees are created by the practice.
         return User::create([
-            'role_id' => Role::customerId(),
+            'role_id' => 1,
             'firstname' => $input['firstname'],
             'lastname' => $input['lastname'],
             'email' => $input['email'],
