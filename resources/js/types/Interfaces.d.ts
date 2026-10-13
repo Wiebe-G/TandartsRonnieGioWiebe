@@ -10,6 +10,8 @@ export interface Appointment {
     note: string;
 	customer: User;
 	treatments: Treatment[];
+	dentist: User;
+	assistant: User;
 }
 
 export interface Role {

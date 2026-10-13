@@ -75,6 +75,11 @@ export default function Show({}) {
 			<Head title="Zie afspraak in"/>
 
 			<form className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4 w-full gap-y-8">
+				<div className="flex gap-x-8">
+					<span>Klant: {Appointment.customer.firstname} {Appointment.customer.lastname}</span>
+					<span>Tandarts: {Appointment.dentist.firstname} {Appointment.dentist.lastname}</span>
+					<span>Assistent: {Appointment.assistant.firstname} {Appointment.assistant.lastname}</span>
+				</div>
 				<div>Soort behandeling: {Appointment.treatments[0].name}</div>
 				<label htmlFor="note">Notitie: </label>
 				<textarea className="w-4/5 flex justify-center text-center h-full" readOnly={!editMode}

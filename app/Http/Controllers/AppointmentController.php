@@ -83,7 +83,7 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::query()
             ->where('appointment_id', $id)
-            ->with(['customer', 'treatments'])
+            ->with(['customer', 'treatments', 'dentist', 'assistant'])
             ->get()
             ->first();
 
@@ -124,7 +124,8 @@ class AppointmentController extends Controller
             'status' => 'Nog niet denk ik idk',
         ]);
 
-        return redirect()->route('appointments')->with('success', 'Afspraak succesvol aangepast');
+        return redirect()->route('appointments')
+            ->with('success', 'Afspraak succesvol aangepast');
     }
 
     /**
@@ -139,6 +140,7 @@ class AppointmentController extends Controller
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
         $appointment->delete();
 
-        return redirect()->route('appointments')->with('success', 'Afspraak succesvol verwijderd');
+        return redirect()->route('appointments')
+            ->with('success', 'Afspraak succesvol verwijderd');
     }
 }
