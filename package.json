@@ -8,7 +8,8 @@
 		"dev": "vp dev",
 		"check": "vp check",
 		"check:fix": "vp check --fix",
-		"types:check": "tsc --noEmit"
+		"types:check": "tsc --noEmit",
+		"lint": "eslint . --ext .js,.jsx --report-unused-disable-directives --max-warnings 0"
 	},
 	"dependencies": {
 		"@inertiajs/react": "^3.0.0",
@@ -34,6 +35,7 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"concurrently": "^10.0.3",
+		"eslint": "^10.12.0",
 		"input-otp": "^1.4.2",
 		"laravel-vite-plugin": "^3.0.0",
 		"lucide-react": "^0.475.0",

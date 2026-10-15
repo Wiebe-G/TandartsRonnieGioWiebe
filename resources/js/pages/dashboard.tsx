@@ -6,13 +6,22 @@ import {Appointment, User} from "@/types/Interfaces";
 
 interface Props extends PageProps {
 	auth: User;
-	CustomerAppointments: Appointment;
+	Appointments: Appointment[];
 }
 
 export default function Dashboard() {
-	const { auth, CustomerAppointments } = usePage<Props>().props;
+	const { auth, Appointments } = usePage<Props>().props;
 
-	console.log(auth.user.role_id)
+	const EmployeeAppointments: Appointment[] = [];
+
+	Appointments.map((app) => {
+		if(app.dentist_id === auth.user.id || app.assistant_id === auth.user.id)
+		{
+			EmployeeAppointments.push(app)
+		}
+	})
+	console.log(EmployeeAppointments)
+
     return (
         <>
             <Head title="Dashboard" />
@@ -32,7 +41,12 @@ export default function Dashboard() {
                     </div>
                 </div>
                 <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-screen flex-1 overflow-hidden rounded-xl border md:min-h-min">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+					{
+						auth.user.role_id == 1
+					? <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+					: "Planning medewerker"
+					}
+
                 </div>
             </div>
         </>

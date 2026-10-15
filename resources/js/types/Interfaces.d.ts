@@ -14,7 +14,7 @@ export interface Appointment {
 	assistant: User;
 }
 
-export interface Role {
+interface Role {
     role_id: number;
     name: string;
 }
