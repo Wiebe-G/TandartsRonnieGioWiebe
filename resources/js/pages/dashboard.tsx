@@ -9,7 +9,7 @@ interface Props extends PageProps {
 }
 
 export default function Dashboard() {
-	const { auth } = usePage().props;
+	const { auth } = usePage<Props>().props;
 
     return (
         <>
@@ -17,7 +17,10 @@ export default function Dashboard() {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <div className="LayoutGrid">
-						{auth.user.role_id == 1 ? "Volgende afspraak voor klant" : "Volgende afspraak, maar medewerker"}
+						{auth.role_id == 1
+							? "Volgende afspraak voor klant"
+							: "Volgende afspraak, maar medewerker"
+						}
                     </div>
                     <div className="LayoutGrid">
                         <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
