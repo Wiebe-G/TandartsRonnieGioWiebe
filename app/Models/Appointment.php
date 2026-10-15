@@ -38,8 +38,8 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'dentist_id', 'id');
     }
 
-	public function assistant(): BelongsTo
-	{
-		return $this->belongsTo(User::class, 'assistant_id', 'id');
-	}
+    public function assistant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assistant_id', 'id');
+    }
 }

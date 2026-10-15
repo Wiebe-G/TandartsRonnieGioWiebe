@@ -2,23 +2,24 @@ import {Head, usePage} from '@inertiajs/react';
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import { dashboard } from '@/routes';
 import {PageProps} from "@inertiajs/core";
-import {User} from "@/types/Interfaces";
+import {Appointment, User} from "@/types/Interfaces";
 
 interface Props extends PageProps {
 	auth: User;
+	CustomerAppointments: Appointment;
 }
 
 export default function Dashboard() {
-	const { auth } = usePage<Props>().props;
+	const { auth, CustomerAppointments } = usePage<Props>().props;
 
-	if(!auth.role_id) auth.role_id = 1
+	console.log(auth.user.role_id)
     return (
         <>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <div className="LayoutGrid">
-						{auth.role_id == 1
+						{auth.user.role_id == 1
 							? "Volgende afspraak voor klant"
 							: "Volgende afspraak, maar medewerker"
 						}

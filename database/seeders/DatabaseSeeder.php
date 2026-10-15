@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'phonenumber' => 1234567890,
         ]);
-		$Dentist->update([
-			'employee_id' => 1
-		]);
+        $Dentist->update([
+            'employee_id' => 1,
+        ]);
 
         User::create([
             'role_id' => 1,

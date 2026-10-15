@@ -24,4 +24,20 @@ class RouteController extends Controller
             'Treatments' => Treatment::all(),
         ]);
     }
+
+    public function dashboard()
+    {
+        $CustomerAppointments = Appointment::query()->where(
+			['customer_id', '=', auth()->user()->id],
+			['date', '>=' , date('Y-m-d')]
+		);
+        $DentistAppointments = Appointment::query()->where('dentist_id', '=', auth()->user()->id);
+        $AssistantAppointments = Appointment::query()->where('assistant_id', '=', auth()->user()->id);
+
+        return Inertia::render('dashboard', [
+            'CustomerAppointments' => $CustomerAppointments,
+            'DentistAppointments' => $DentistAppointments,
+            'AssistantAppointments' => $AssistantAppointments,
+        ]);
+    }
 }
