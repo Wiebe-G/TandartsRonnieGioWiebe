@@ -11,6 +11,7 @@ interface Props extends PageProps {
 export default function Dashboard() {
 	const { auth } = usePage<Props>().props;
 
+	if(!auth.role_id) auth.role_id = 1
     return (
         <>
             <Head title="Dashboard" />
