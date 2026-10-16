@@ -19,6 +19,7 @@ export function EmployeePlanning(EmployeeAppointments: Appointment[], Appointmen
 										</span>
 				<br/>
 				<span>Klant: {app.customer.firstname} {app.customer.lastname}</span>
+				<br/>
 			</Link>
 		))}
 	</div>;
