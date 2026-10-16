@@ -1,4 +1,4 @@
-import {Head, usePage} from '@inertiajs/react';
+import {Head, Link, usePage} from '@inertiajs/react';
 import {PlaceholderPattern} from '@/components/ui/placeholder-pattern';
 import {dashboard} from '@/routes';
 import {PageProps} from "@inertiajs/core";
@@ -21,6 +21,8 @@ export default function Dashboard() {
 		}
 	})
 
+	const NextEmployeeAppointment = EmployeeAppointments[0];
+
 	return (
 		<>
 			<Head title="Dashboard"/>
@@ -29,7 +31,16 @@ export default function Dashboard() {
 					<div className="LayoutGrid">
 						{auth.user.role_id == 1
 							? "Volgende afspraak voor klant"
-							: "Volgende afspraak, maar medewerker"
+							:
+							<div className="border-2 border-blue-700">
+								<span>Volgende afspraak:</span>
+								<br/>
+								<Link href={`/appointments/view/${EmployeeAppointments[0].appointment_id}`}>
+									{NextEmployeeAppointment.treatments[0].name} voor {NextEmployeeAppointment.customer.firstname} {NextEmployeeAppointment.customer.lastname}
+									<br/>
+									op {NextEmployeeAppointment.date.toString()} van {NextEmployeeAppointment.starttime.toString()} tot {NextEmployeeAppointment.endtime.toString()}
+								</Link>
+							</div>
 						}
 					</div>
 					<div className="LayoutGrid">
