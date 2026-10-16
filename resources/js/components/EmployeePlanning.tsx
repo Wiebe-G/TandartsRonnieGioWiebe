@@ -5,7 +5,7 @@ export function EmployeePlanning(EmployeeAppointments: Appointment[], Appointmen
 	return <div>
 		{EmployeeAppointments.map((app: Appointment, index: number) => (
 			<Link key={app.appointment_id} href={`/appointments/view/${app.appointment_id}`}>
-										<span>
+										<span className="font-bold">
 											{/* Zorg ervoor dat boven aan sowieso datum staat */}
 											{
 												index == 0
