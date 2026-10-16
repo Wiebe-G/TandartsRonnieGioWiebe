@@ -24,15 +24,16 @@ class DatabaseSeeder extends Seeder
         //            'email' => 'test@example.com',
         //        ]);
 
-        User::create([
+        $Dentist = User::create([
             'role_id' => 2,
-            'employee_id' => 1,
             'firstname' => 'Wiebe',
             'lastname' => 'Gouma',
             'email' => 'wiebe@gouma.nl',
             'password' => Hash::make('password'),
             'phonenumber' => 1234567890,
-
+        ]);
+        $Dentist->update([
+            'employee_id' => 1,
         ]);
 
         User::create([

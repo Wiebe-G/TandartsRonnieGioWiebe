@@ -84,7 +84,7 @@ export default function Create({}) {
 			<Head title="Afspraak maken"/>
 			{/*	Dropdown met alle klanten, datum en tijd, soort behandeling*/}
 			<form action="" className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4 w-full gap-y-8">
-				<div className = "min-w-[50vw] justify-items-center">
+				<div className = "">
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
 							<button type={'button'}

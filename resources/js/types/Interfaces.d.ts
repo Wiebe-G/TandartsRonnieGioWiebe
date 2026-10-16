@@ -10,14 +10,17 @@ export interface Appointment {
     note: string;
 	customer: User;
 	treatments: Treatment[];
+	dentist: User;
+	assistant: User;
 }
 
-export interface Role {
+interface Role {
     role_id: number;
     name: string;
 }
 
 export interface User {
+	user: User;
     id: number;
     role_id: number;
     firstname: string;
