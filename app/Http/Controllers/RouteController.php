@@ -29,7 +29,7 @@ class RouteController extends Controller
     {
         return Inertia::render('dashboard', [
 			// Alle afspraken van vandaag of in de toekomst
-            'Appointments' => Appointment::query()->with(['customer', 'treatments'])->get()->where('date', '>=', date('Y-m-d'))->values(),
+            'Appointments' => Appointment::orderBy('date')->with(['customer', 'treatments'])->get()->where('date', '>=', date('Y-m-d'))->values(),
         ]);
     }
 }

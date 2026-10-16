@@ -1,8 +1,9 @@
 import {Head, usePage} from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import { dashboard } from '@/routes';
+import {PlaceholderPattern} from '@/components/ui/placeholder-pattern';
+import {dashboard} from '@/routes';
 import {PageProps} from "@inertiajs/core";
 import {Appointment, User} from "@/types/Interfaces";
+import {EmployeePlanning} from "@/components/EmployeePlanning";
 
 interface Props extends PageProps {
 	auth: User;
@@ -10,54 +11,56 @@ interface Props extends PageProps {
 }
 
 export default function Dashboard() {
-	const { auth, Appointments } = usePage<Props>().props;
+	const {auth, Appointments} = usePage<Props>().props;
 
 	const EmployeeAppointments: Appointment[] = [];
 
 	Appointments.map((app) => {
-		if(app.dentist_id === auth.user.id || app.assistant_id === auth.user.id)
-		{
+		if (app.dentist_id === auth.user.id || app.assistant_id === auth.user.id) {
 			EmployeeAppointments.push(app)
 		}
 	})
-	console.log(EmployeeAppointments)
 
-    return (
-        <>
-            <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="LayoutGrid">
+	return (
+		<>
+			<Head title="Dashboard"/>
+			<div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
+					<div className="LayoutGrid">
 						{auth.user.role_id == 1
 							? "Volgende afspraak voor klant"
 							: "Volgende afspraak, maar medewerker"
 						}
-                    </div>
-                    <div className="LayoutGrid">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="LayoutGrid">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                </div>
-                <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-screen flex-1 overflow-hidden rounded-xl border md:min-h-min">
+					</div>
+					<div className="LayoutGrid">
+						<PlaceholderPattern
+							className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20"/>
+					</div>
+					<div className="LayoutGrid">
+						<PlaceholderPattern
+							className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20"/>
+					</div>
+				</div>
+				<div
+					className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-screen flex-1 overflow-hidden rounded-xl border md:min-h-min">
 					{
 						auth.user.role_id == 1
-					? <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-					: "Planning medewerker"
+							? <PlaceholderPattern
+								className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20"/>
+							:
+							EmployeePlanning(EmployeeAppointments, Appointments)
 					}
-
-                </div>
-            </div>
-        </>
-    );
+				</div>
+			</div>
+		</>
+	);
 }
 
 Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-        },
-    ],
+	breadcrumbs: [
+		{
+			title: 'Dashboard',
+			href: dashboard(),
+		},
+	],
 };
