@@ -33,14 +33,14 @@ class TreatmentController extends Controller
     {
         $validated = $request->validate([
             'Name' => ['required', 'string', 'max:255'],
-            'Description' => ['required', 'string', 'max:255'],
-            'Price' => ['required', 'numeric'],
-            'DurationInMinutes' => ['required', 'numeric'],
+            'Description' => ['nullable', 'string', 'max:255'],
+            'Price' => ['required', 'numeric', 'min:0'],
+            'DurationInMinutes' => ['required', 'integer', 'min:5', 'max:480'],
         ]);
 
         Treatment::create([
             'name' => $validated['Name'],
-            'description' => $validated['Description'],
+            'description' => $validated['Description'] ?? '',
             'price' => $validated['Price'],
             'duration' => $validated['DurationInMinutes'],
             'active' => true,
@@ -62,7 +62,9 @@ class TreatmentController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        return Inertia::render('Treatments/Edit', [
+            'Treatment' => Treatment::query()->findOrFail($id),
+        ]);
     }
 
     /**
@@ -70,7 +72,23 @@ class TreatmentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validated = $request->validate([
+            'Name' => ['required', 'string', 'max:255'],
+            'Description' => ['nullable', 'string', 'max:255'],
+            'Price' => ['required', 'numeric', 'min:0'],
+            'DurationInMinutes' => ['required', 'integer', 'min:5', 'max:480'],
+            'Active' => ['required', 'boolean'],
+        ]);
+
+        Treatment::query()->findOrFail($id)->update([
+            'name' => $validated['Name'],
+            'description' => $validated['Description'] ?? '',
+            'price' => $validated['Price'],
+            'duration' => $validated['DurationInMinutes'],
+            'active' => $validated['Active'],
+        ]);
+
+        return redirect()->route('treatments')->with('success', 'Behandeling aangepast!');
     }
 
     /**

@@ -1,6 +1,6 @@
 import {Link, usePage} from '@inertiajs/react';
 import {PageProps} from '@inertiajs/core';
-import {BookOpen, CalendarDays, FolderGit2, LayoutGrid, Stethoscope, UserCog, Users} from 'lucide-react';
+import {BookOpen, CalendarClock, CalendarDays, ClipboardList, FolderGit2, LayoutGrid, Stethoscope, UserCog, Users} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import {NavFooter} from '@/components/nav-footer';
 import {NavMain} from '@/components/nav-main';
@@ -25,7 +25,8 @@ interface Props extends PageProps {
 
 export function AppSidebar() {
     const {auth} = usePage().props;
-    const dashboardUrl = dashboard();
+    // Admins use their own versions of the dashboard, appointment and treatment pages
+    const dashboardUrl = auth.isAdmin ? admin.dashboard() : dashboard();
 
     const mainNavItems: NavItem[] = [
         {
@@ -33,7 +34,21 @@ export function AppSidebar() {
             href: dashboardUrl,
             icon: LayoutGrid,
         },
-        ...(auth.user.role_id != 1
+        ...(auth.isAdmin
+                ? [
+                    {
+                        title: 'Afspraken',
+                        href: admin.appointments.index(),
+                        icon: CalendarClock
+                    },
+                    {
+                        title: 'Behandelingen',
+                        href: admin.treatments.index(),
+                        icon: ClipboardList
+                    }
+                ] : []
+        ),
+        ...(auth.user.role_id != 1 && !auth.isAdmin
                 ? [
                     {
                         title: 'Afspraken',

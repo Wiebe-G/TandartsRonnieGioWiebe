@@ -7,6 +7,9 @@ use App\Models\Appointment;
 use App\Models\Role;
 use App\Models\Room;
 use App\Models\User;
+use App\Support\AppointmentConflicts;
+use App\Support\AppointmentEditOptions;
+use App\Support\OpeningHours;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,8 +20,6 @@ use Inertia\Response;
 
 class CalendarController extends Controller
 {
-    public const STATUSES = ['scheduled', 'completed', 'cancelled', 'no_show'];
-
     /**
      * Read: pick an employee and see their appointments for one week.
      */
@@ -44,12 +45,7 @@ class CalendarController extends Controller
                 'next' => $week->addWeek()->toDateString(),
                 'days' => $selected ? $this->roster($selected, $week) : [],
             ],
-            'options' => [
-                'dentists' => $employees->where('role_id', Role::idFor(Role::DENTIST))->values(),
-                'staff' => $employees->values(),
-                'rooms' => Room::query()->orderBy('name')->get(['room_id', 'name']),
-                'statuses' => self::STATUSES,
-            ],
+            'options' => AppointmentEditOptions::toArray(),
         ]);
     }
 
@@ -63,15 +59,25 @@ class CalendarController extends Controller
             'starttime' => ['required', 'date_format:H:i'],
             'endtime' => ['required', 'date_format:H:i', 'after:starttime'],
             'dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
-            'assistant_id' => ['nullable', 'different:dentist_id', Rule::exists(User::class, 'id')->whereNot('role_id', Role::customerId())],
-            'room_id' => ['nullable', Rule::exists(Room::class, 'room_id')],
-            'status' => ['required', Rule::in(self::STATUSES)],
+            'assistant_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
+            'room_id' => ['required', Rule::exists(Room::class, 'room_id')],
+            'status' => ['required', Rule::in(AppointmentEditOptions::STATUSES)],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
         // Times are stored as HH:MM:SS, so compare and save them in that format
         $validated['starttime'] .= ':00';
         $validated['endtime'] .= ':00';
+
+        if (! OpeningHours::isWorkday($validated['date'])) {
+            throw ValidationException::withMessages(['date' => OpeningHours::WEEKEND_MESSAGE]);
+        }
+        if (! OpeningHours::onSlot($validated['starttime']) || ! OpeningHours::onSlot($validated['endtime'])) {
+            throw ValidationException::withMessages(['starttime' => OpeningHours::SLOT_MESSAGE]);
+        }
+        if (! OpeningHours::fits($validated['starttime'], $validated['endtime'])) {
+            throw ValidationException::withMessages(['starttime' => OpeningHours::MESSAGE]);
+        }
 
         $this->ensureNoOverlap($appointment, $validated);
 
@@ -124,28 +130,18 @@ class CalendarController extends Controller
      */
     private function ensureNoOverlap(Appointment $appointment, array $validated): void
     {
-        $overlapping = Appointment::query()
-            ->whereKeyNot($appointment->getKey())
-            ->whereDate('date', $validated['date'])
-            ->where('starttime', '<', $validated['endtime'])
-            ->where('endtime', '>', $validated['starttime'])
-            ->whereNotIn('status', ['cancelled'])
-            ->get();
+        $conflicts = new AppointmentConflicts($validated['date'], $validated['starttime'], $validated['endtime'], $appointment);
 
-        $people = array_filter([$validated['dentist_id'], $validated['assistant_id'] ?? null]);
+        if ($conflicts->personIsBusy([$validated['dentist_id'], $validated['assistant_id'] ?? null])) {
+            throw ValidationException::withMessages([
+                'starttime' => 'De tandarts of assistent heeft op dit tijdstip al een andere afspraak.',
+            ]);
+        }
 
-        foreach ($overlapping as $other) {
-            if (array_intersect($people, array_filter([$other->dentist_id, $other->assistant_id]))) {
-                throw ValidationException::withMessages([
-                    'starttime' => 'De tandarts of assistent heeft op dit tijdstip al een andere afspraak.',
-                ]);
-            }
-
-            if (! empty($validated['room_id']) && (int) $other->room_id === (int) $validated['room_id']) {
-                throw ValidationException::withMessages([
-                    'room_id' => 'Deze kamer is op dit tijdstip al bezet.',
-                ]);
-            }
+        if ($conflicts->roomIsTaken($validated['room_id'] ?? null)) {
+            throw ValidationException::withMessages([
+                'room_id' => 'Deze kamer is op dit tijdstip al bezet.',
+            ]);
         }
     }
 

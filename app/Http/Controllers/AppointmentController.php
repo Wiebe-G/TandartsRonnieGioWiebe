@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\Role;
 use App\Models\Treatment;
 use App\Models\User;
+use App\Support\AppointmentConflicts;
+use App\Support\OpeningHours;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class AppointmentController extends Controller
@@ -27,13 +32,14 @@ class AppointmentController extends Controller
     public function create()
     {
         // oké goed dan is dit maar een object >:(
-        $Patients = User::query()->get()->where('role_id', 1)->values()->toArray();
+        $Patients = User::query()->get()->where('role_id', Role::customerId())->values()->toArray();
         $Treatments = Treatment::query()->get()->where('active', true)->values()->toArray();
 
         return Inertia::render('Appointments/Create', [
             'Customers' => $Patients,
             'Treatments' => $Treatments,
-            'Users' => User::query()->get()->values(),
+            // Met rol, zodat de pagina op rolnaam kan filteren
+            'Users' => User::query()->with('role')->get()->values(),
         ]);
     }
 
@@ -43,28 +49,38 @@ class AppointmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'Customer_id' => ['required', 'exists:users,id'],
-            'Dentist_id' => ['required', 'exists:users,id'],
-            'Assistant_id' => ['required', 'exists:users,id'],
+            'Customer_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::customerId())],
+            'Dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
+            // Een assistent is optioneel
+            'Assistant_id' => ['nullable', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
             'Date' => ['required', 'date'],
             'Type' => ['required', 'exists:treatment,treatment_id'],
-            'Note' => ['required', 'string', 'max:255'],
+            'Note' => ['nullable', 'string', 'max:255'],
+        ], [
+            'Customer_id.required' => 'Kies een klant.',
+            'Dentist_id.required' => 'Kies een tandarts.',
+            'Type.required' => 'Kies een behandeling.',
         ]);
 
         $Datum = $validated['Date'];
         $tijd = Carbon::parse($Datum)->timezone('Europe/Amsterdam');
         $treatment = Treatment::query()->firstWhere('treatment_id', $validated['Type']);
+        $starttime = $tijd->toTimeString();
+        // Afgerond naar boven op een half uur
+        $endtime = OpeningHours::endFor($starttime, (int) $treatment->duration);
+
+        $this->checkPlanning($tijd->toDateString(), $starttime, $endtime, $validated['Dentist_id'], $validated['Assistant_id'] ?? null);
 
         $Customer = User::query()->find($request->Customer_id);
         $appointment = Appointment::create([
             'customer_id' => $Customer->id,
             'dentist_id' => $validated['Dentist_id'],
-            'assistant_id' => $validated['Assistant_id'],
+            'assistant_id' => $validated['Assistant_id'] ?? null,
             'date' => $tijd->toDateString(),
-            'starttime' => $tijd->toTimeString(),
-            'endtime' => $tijd->addMinutes($treatment->duration)->toTimeString(),
-            'status' => 'Nog niet denk ik idk',
-            'note' => $validated['Note'],
+            'starttime' => $starttime,
+            'endtime' => $endtime,
+            'status' => 'scheduled',
+            'note' => $validated['Note'] ?? '',
         ]);
 
         DB::table('appointment_treatment')->insert([
@@ -84,8 +100,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::query()
             ->where('appointment_id', $id)
             ->with(['customer', 'treatments', 'dentist', 'assistant'])
-            ->get()
-            ->first();
+            ->firstOrFail();
 
         return Inertia::render('Appointments/Show', [
             'Appointment' => $appointment,
@@ -107,21 +122,24 @@ class AppointmentController extends Controller
     {
         $validated = $request->validate([
             'Appointment_Id' => ['required', 'exists:appointment,appointment_id'],
-            'Note' => ['required', 'string', 'max:255'],
-            'Date' => ['required', 'string'],
-            'Starttime' => ['required', 'string'],
+            'Note' => ['nullable', 'string', 'max:255'],
+            'Date' => ['required', 'date'],
+            'Starttime' => ['required', 'date_format:H:i,H:i:s'],
         ]);
         $Appointment = Appointment::query()->with('treatments')->find($validated['Appointment_Id']);
 
         $tijd = Carbon::parse($validated['Starttime']);
-        $endTime = $tijd->addMinutes($Appointment['Treatments'][0]['duration'])->toTimeString();
+        $startTime = $tijd->toTimeString();
+        $endTime = OpeningHours::endFor($startTime, (int) ($Appointment['treatments'][0]['duration'] ?? OpeningHours::SLOT_MINUTES));
 
+        $this->checkPlanning(Carbon::parse($validated['Date'])->toDateString(), $startTime, $endTime, $Appointment->dentist_id, $Appointment->assistant_id, $Appointment);
+
+        // De status blijft zoals hij was
         $Appointment->update([
-            'note' => $validated['Note'],
+            'note' => $validated['Note'] ?? '',
             'date' => $validated['Date'],
-            'starttime' => $validated['Starttime'],
+            'starttime' => $startTime,
             'endtime' => $endTime,
-            'status' => 'Nog niet denk ik idk',
         ]);
 
         return redirect()->route('appointments')
@@ -138,9 +156,38 @@ class AppointmentController extends Controller
         ]);
         $appointment = Appointment::query()->find($validated['id']);
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
+        // De koppeling met de behandeling houdt het verwijderen tegen, dus die gaat eerst
+        DB::table('appointment_treatment')->where('appointment_id', $appointment->appointment_id)->delete();
         $appointment->delete();
 
         return redirect()->route('appointments')
             ->with('success', 'Afspraak succesvol verwijderd');
+    }
+
+    /**
+     * Alleen op werkdagen, tussen 9:00 en 17:00, op het hele of halve uur, en niemand dubbel geboekt.
+     */
+    private function checkPlanning(string $date, string $start, string $end, $dentistId, $assistantId, ?Appointment $ignore = null): void
+    {
+        if (! OpeningHours::isWorkday($date)) {
+            throw ValidationException::withMessages(['Date' => OpeningHours::WEEKEND_MESSAGE]);
+        }
+        if (! OpeningHours::onSlot($start)) {
+            throw ValidationException::withMessages(['Date' => OpeningHours::SLOT_MESSAGE]);
+        }
+        if (! OpeningHours::fits($start, $end)) {
+            throw ValidationException::withMessages(['Date' => OpeningHours::MESSAGE]);
+        }
+
+        $conflicts = new AppointmentConflicts($date, $start, $end, $ignore);
+        if ($conflicts->personIsBusy([$dentistId])) {
+            throw ValidationException::withMessages(['Dentist_id' => 'De tandarts heeft op dit tijdstip al een afspraak.']);
+        }
+        if ($conflicts->personIsBusy([$assistantId])) {
+            throw ValidationException::withMessages(['Assistant_id' => 'De assistent heeft op dit tijdstip al een afspraak.']);
+        }
+        if ($ignore && $conflicts->roomIsTaken($ignore->room_id)) {
+            throw ValidationException::withMessages(['Date' => 'De kamer is op dit tijdstip al bezet.']);
+        }
     }
 }

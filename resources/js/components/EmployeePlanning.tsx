@@ -13,7 +13,7 @@ export function EmployeePlanning(EmployeeAppointments: Appointment[], Appointmen
 													: null
 											}
 											{/* Als de datum groter is (dus nieuwe datum) */}
-											{app.date > Appointments[index - 1]?.date
+											{index > 0 && app.date > EmployeeAppointments[index - 1].date
 												? `${app.date}`
 												: null}
 										</span>

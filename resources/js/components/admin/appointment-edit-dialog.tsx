@@ -86,6 +86,9 @@ export default function AppointmentEditDialog({
 										id="starttime"
 										type="time"
 										name="starttime"
+										min="09:00"
+										max="17:00"
+										step={1800}
 										defaultValue={appointment.starttime.slice(
 											0,
 											5,
@@ -99,6 +102,9 @@ export default function AppointmentEditDialog({
 										id="endtime"
 										type="time"
 										name="endtime"
+										min="09:00"
+										max="17:00"
+										step={1800}
 										defaultValue={appointment.endtime.slice(
 											0,
 											5,
@@ -142,9 +148,12 @@ export default function AppointmentEditDialog({
 										defaultValue={
 											appointment.assistant_id ?? ''
 										}
+										required
 									>
-										<option value="">Geen assistent</option>
-										{options.staff.map((employee) => (
+										<option value="" disabled>
+											Kies een assistent
+										</option>
+										{options.assistants.map((employee) => (
 											<option
 												key={employee.id}
 												value={employee.id}
@@ -162,8 +171,11 @@ export default function AppointmentEditDialog({
 										id="room_id"
 										name="room_id"
 										defaultValue={appointment.room_id ?? ''}
+										required
 									>
-										<option value="">Geen kamer</option>
+										<option value="" disabled>
+											Kies een kamer
+										</option>
 										{options.rooms.map((room) => (
 											<option
 												key={room.room_id}

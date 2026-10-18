@@ -12,7 +12,7 @@ beforeEach(function () {
 
     $this->dentist = User::factory()->role(Role::DENTIST)->create();
     $this->otherDentist = User::factory()->role(Role::DENTIST)->create();
-    $this->assistant = User::factory()->role('assistant')->create();
+    $this->assistant = User::factory()->role(Role::ASSISTANT)->create();
     $this->rooms = collect(['Kamer 1', 'Kamer 2', 'Kamer 3'])->map(fn ($name) => Room::create(['name' => $name]));
 
     $appointment = fn (array $attributes) => Appointment::create([
@@ -45,46 +45,52 @@ test('admins see the practice statistics on the dashboard', function () {
     Feedback::create(['customer_id' => $customer->id, 'dentist_id' => $this->otherDentist->id, 'rating' => 2]);
 
     $this->actingAs($this->admin)
-        ->get(route('dashboard'))
+        ->get(route('admin.dashboard'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('dashboard')
+            ->component('admin/dashboard')
             // satisfaction
-            ->where('Statistics.satisfaction.average', 3.7)
-            ->where('Statistics.satisfaction.count', 3)
-            ->where('Statistics.satisfaction.positivePercentage', 67)
+            ->where('statistics.satisfaction.average', 3.7)
+            ->where('statistics.satisfaction.count', 3)
+            ->where('statistics.satisfaction.positivePercentage', 67)
             // rooms in use right now
-            ->where('Statistics.rooms.total', 3)
-            ->where('Statistics.rooms.inUse', 1)
-            ->where('Statistics.rooms.list.0.name', 'Kamer 1')
-            ->whereNot('Statistics.rooms.list.0.appointment', null)
-            ->where('Statistics.rooms.list.1.appointment', null)
+            ->where('statistics.rooms.total', 3)
+            ->where('statistics.rooms.inUse', 1)
+            ->where('statistics.rooms.list.0.name', 'Kamer 1')
+            ->whereNot('statistics.rooms.list.0.appointment', null)
+            ->where('statistics.rooms.list.1.appointment', null)
             // customers at the practice
-            ->where('Statistics.customers.presentNow', 1)
-            ->where('Statistics.customers.expectedLater', 1)
-            ->where('Statistics.customers.today', 3)
+            ->where('statistics.customers.presentNow', 1)
+            ->where('statistics.customers.expectedLater', 1)
+            ->where('statistics.customers.today', 3)
             // employees at work today: both dentists and the assistant, two of them busy now
-            ->where('Statistics.employees.atWork', 3)
-            ->where('Statistics.employees.busyNow', 2)
-            ->where('Statistics.employees.total', 4)
+            ->where('statistics.employees.atWork', 3)
+            ->where('statistics.employees.busyNow', 2)
+            ->where('statistics.employees.total', 4)
             // feedback per dentist, best rated first
-            ->where('Statistics.dentistFeedback.0.id', $this->dentist->id)
-            ->where('Statistics.dentistFeedback.0.average', 4.5)
-            ->where('Statistics.dentistFeedback.1.average', 2)
-            ->has('Statistics.latestFeedback', 3));
+            ->where('statistics.dentistFeedback.0.id', $this->dentist->id)
+            ->where('statistics.dentistFeedback.0.average', 4.5)
+            ->where('statistics.dentistFeedback.1.average', 2)
+            ->has('statistics.latestFeedback', 3));
 });
 
 test('satisfaction is empty when there is no feedback yet', function () {
     $this->actingAs($this->admin)
-        ->get(route('dashboard'))
+        ->get(route('admin.dashboard'))
         ->assertInertia(fn ($page) => $page
-            ->where('Statistics.satisfaction.average', null)
-            ->where('Statistics.satisfaction.count', 0)
-            ->where('Statistics.dentistFeedback.0.average', null));
+            ->where('statistics.satisfaction.average', null)
+            ->where('statistics.satisfaction.count', 0)
+            ->where('statistics.dentistFeedback.0.average', null));
 });
 
-test('other users do not get the practice statistics', function () {
+test('other users cannot open the admin dashboard', function () {
     $this->actingAs($this->dentist)
-        ->get(route('dashboard'))
-        ->assertInertia(fn ($page) => $page->where('Statistics', null));
+        ->get(route('admin.dashboard'))
+        ->assertForbidden();
+});
+
+test('the admin dashboard lists today\'s appointments', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn ($page) => $page->has('today', 3)); // the three appointments on 19 Oct
 });

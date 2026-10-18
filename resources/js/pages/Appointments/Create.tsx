@@ -13,11 +13,11 @@ interface Props extends PageProps {
 }
 
 export default function Create({}) {
-	const { Customers, Treatments, Users } = usePage<Props>().props;
+	const { Customers, Treatments, Users, errors } = usePage<Props>().props;
 
 	const [selectedUser, setSelectedUser] = useState<User>();
 	const [selectedTreatmentId, setSelectedTreatmentId] = useState<number>();
-	const [statefulDate, setStatefulDate] = useState(new Date());
+	const [statefulDate, setStatefulDate] = useState<Date>();
 	const [note, setNote] = useState("");
 	const [selectedDentist, setSelectedDentist] = useState(0);
 	const [selectedAssistant, setSelectedAssistant] = useState(0);
@@ -25,12 +25,13 @@ export default function Create({}) {
 	let Dentists: User[] = [];
 	let Assistants: User[] = [];
 
+	// Op rolnaam filteren, de role_id's kunnen per database verschillen
 	Users.map((user) => {
-		if(user.role_id == 2)
+		if(user.role?.name == 'dentist')
 		{
 			Dentists = [... Dentists, user]
 		}
-		if(user.role_id == 4)
+		if(user.role?.name == 'assistant')
 		{
 			Assistants = [... Assistants, user]
 		}
@@ -53,13 +54,29 @@ export default function Create({}) {
 			alert("Geen klant geselecteerd");
 			return;
 		}
+		if(!selectedDentist) {
+			alert("Geen tandarts geselecteerd");
+			return;
+		}
+		if(!selectedTreatmentId) {
+			alert("Geen behandeling geselecteerd");
+			return;
+		}
+		if(!statefulDate || isNaN(statefulDate.getTime())) {
+			alert("Geen datum gekozen");
+			return;
+		}
 		// check voor of datum in het verleden is
+		if(statefulDate < new Date()) {
+			alert("De datum ligt in het verleden");
+			return;
+		}
 		router.post(
 			`/appointments/create`,
 			{
 				Customer_id: selectedUser.id,
 				Dentist_id: selectedDentist,
-				Assistant_id: selectedAssistant,
+				Assistant_id: selectedAssistant || null,
 				Date: statefulDate,
 				Type: selectedTreatmentId,
 				Note: note
@@ -84,6 +101,10 @@ export default function Create({}) {
 			<Head title="Afspraak maken"/>
 			{/*	Dropdown met alle klanten, datum en tijd, soort behandeling*/}
 			<form action="" className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4 w-full gap-y-8">
+				{/* Foutmeldingen van de server, anders lijkt het alsof er niets gebeurt */}
+				{Object.values(errors).map((message) => (
+					<span key={message} className="text-red-600">{message}</span>
+				))}
 				<div className = "">
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
@@ -187,7 +208,9 @@ export default function Create({}) {
 				<div id="choose-date" className = "text-center">
 					<label htmlFor="date">Kies een datum: </label>
 					<br/>
-					<input type="datetime-local" id="date" name="date" onChange={handleUpdateDate} />
+					<input type="datetime-local" id="date" name="date" step={1800} onChange={handleUpdateDate} />
+					<br/>
+					<span>Ma t/m vr, 9:00 - 17:00, op het hele of halve uur</span>
 				</div>
 				<div id="select-treatment" className = "">
 					<Dropdown.Root>

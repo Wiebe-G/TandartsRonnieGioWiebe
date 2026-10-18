@@ -10,6 +10,8 @@ beforeEach(function () {
     $this->dentist = User::factory()->role(Role::DENTIST)->create();
     $this->otherDentist = User::factory()->role(Role::DENTIST)->create();
     $this->room = Room::create(['name' => 'Kamer 1']);
+    $this->defaultRoom = Room::create(['name' => 'Kamer 2']);
+    $this->defaultAssistant = User::factory()->role(Role::ASSISTANT)->create();
 
     $this->makeAppointment = fn (array $attributes = []) => Appointment::create([
         'customer_id' => User::factory()->create()->id,
@@ -27,12 +29,20 @@ beforeEach(function () {
         'starttime' => '09:00',
         'endtime' => '09:30',
         'dentist_id' => $this->dentist->id,
-        'assistant_id' => null,
-        'room_id' => null,
+        'assistant_id' => $this->defaultAssistant->id,
+        'room_id' => $this->defaultRoom->room_id,
         'status' => 'scheduled',
         'note' => '',
         ...$attributes,
     ];
+});
+
+test('an assistant and a room are required', function () {
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => null, 'room_id' => null]))
+        ->assertSessionHasErrors(['assistant_id', 'room_id']);
 });
 
 test('non-admins cannot open the calendar', function () {
@@ -47,7 +57,7 @@ test('the calendar lists employees and no roster until one is picked', function 
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/calendar')
-            ->has('employees', 3) // admin + two dentists, no customers
+            ->has('employees', 4) // admin, two dentists and an assistant, no customers
             ->where('selected', null)
             ->where('week.days', []));
 });
@@ -81,7 +91,7 @@ test('admins can update an appointment from the calendar', function () {
         ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)([
             'date' => '2026-10-22',
             'starttime' => '14:00',
-            'endtime' => '14:45',
+            'endtime' => '15:00',
             'dentist_id' => $this->otherDentist->id,
             'room_id' => $this->room->room_id,
             'status' => 'completed',
@@ -93,7 +103,7 @@ test('admins can update an appointment from the calendar', function () {
     $appointment->refresh();
     expect($appointment->date)->toStartWith('2026-10-22')
         ->and($appointment->starttime)->toBe('14:00:00')
-        ->and($appointment->endtime)->toBe('14:45:00')
+        ->and($appointment->endtime)->toBe('15:00:00')
         ->and($appointment->dentist_id)->toBe($this->otherDentist->id)
         ->and($appointment->room_id)->toBe($this->room->room_id)
         ->and($appointment->status)->toBe('completed');
@@ -112,7 +122,7 @@ test('a dentist cannot be double booked', function () {
     $appointment = ($this->makeAppointment)();
 
     $this->actingAs($this->admin)
-        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '10:15', 'endtime' => '10:45']))
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '10:00', 'endtime' => '10:30']))
         ->assertSessionHasErrors('starttime');
 });
 
@@ -131,5 +141,68 @@ test('back to back appointments are allowed', function () {
 
     $this->actingAs($this->admin)
         ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)())
+        ->assertSessionHasNoErrors();
+});
+
+test('an assistant can be assigned from the calendar', function () {
+    $assistant = User::factory()->role(Role::ASSISTANT)->create();
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $assistant->id]))
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh()->assistant_id)->toBe($assistant->id);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.calendar.index', ['employee' => $assistant->id, 'week' => '2026-10-21']))
+        ->assertInertia(fn ($page) => $page
+            ->has('options.assistants', 2)
+            ->has('week.days.2.appointments', 1));
+});
+
+test('only assistants can be assigned as assistant', function () {
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $this->otherDentist->id]))
+        ->assertSessionHasErrors('assistant_id');
+});
+
+test('an assistant who is already busy cannot be double booked', function () {
+    $assistant = User::factory()->role(Role::ASSISTANT)->create();
+    ($this->makeAppointment)(['dentist_id' => $this->otherDentist->id, 'assistant_id' => $assistant->id]);
+    $appointment = ($this->makeAppointment)(['starttime' => '13:00:00', 'endtime' => '13:30:00']);
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $assistant->id]))
+        ->assertSessionHasErrors('starttime');
+});
+
+test('the calendar only allows times between 9:00 and 17:00', function () {
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '16:30', 'endtime' => '17:30']))
+        ->assertSessionHasErrors('starttime');
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '08:00', 'endtime' => '08:30']))
+        ->assertSessionHasErrors('starttime');
+});
+
+test('the calendar refuses the weekend and times off the half hour', function () {
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['date' => '2026-10-25']))
+        ->assertSessionHasErrors('date');
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '09:00', 'endtime' => '09:45']))
+        ->assertSessionHasErrors('starttime');
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['starttime' => '09:30', 'endtime' => '10:30']))
         ->assertSessionHasNoErrors();
 });

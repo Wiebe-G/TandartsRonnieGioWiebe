@@ -33,7 +33,16 @@ export default function Dashboard() {
 				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
 					<div className="LayoutGrid">
 						{auth.user.role_id == 1
-							? "Volgende afspraak voor klant"
+							? (Appointments[0]
+								// Klanten zien alleen hun eigen afspraken (zonder link, de afsprakenpagina is voor medewerkers)
+								? <div className="border-2 border-blue-700">
+									<span>Volgende afspraak:</span>
+									<br/>
+									{Appointments[0].treatments[0]?.name}
+									<br/>
+									op {Appointments[0].date.toString()} van {Appointments[0].starttime.toString()} tot {Appointments[0].endtime.toString()}
+								</div>
+								: <div className="border-2 border-blue-700">Geen komende afspraken</div>)
 							: !NextEmployeeAppointment
 							? <div className="border-2 border-blue-700">Geen komende afspraken</div>
 							:
