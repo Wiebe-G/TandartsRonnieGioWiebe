@@ -24,4 +24,12 @@ class RouteController extends Controller
             'Treatments' => Treatment::all(),
         ]);
     }
+
+    public function dashboard()
+    {
+        return Inertia::render('dashboard', [
+			// Alle afspraken van vandaag of in de toekomst
+            'Appointments' => Appointment::orderBy('date')->with(['customer', 'treatments'])->get()->where('date', '>=', date('Y-m-d'))->values(),
+        ]);
+    }
 }

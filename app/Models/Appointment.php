@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @method static create(array $array)
+ * @method static orderBy(string $string)
  */
 #[Table('appointment')]
 #[Fillable('customer_id', 'dentist_id', 'assistant_id', 'date', 'starttime', 'endtime', 'status', 'note')]
@@ -31,5 +32,15 @@ class Appointment extends Model
             'treatment_id',
             'appointment_id',
             'treatment_id');
+    }
+
+    public function dentist(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dentist_id', 'id');
+    }
+
+    public function assistant(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assistant_id', 'id');
     }
 }

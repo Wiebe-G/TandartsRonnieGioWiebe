@@ -7,6 +7,7 @@ export default function Create() {
 	const [description, setDescription] = useState("Desc");
 	const [price, setPrice] = useState(67);
 	const [duration, setDuration] = useState(0);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleCreateTreatment = () => {
 		router.post('/treatments/create', {
@@ -44,10 +45,11 @@ export default function Create() {
 				<input type="number" name="Duration" value={duration}
 					onChange={e => setDuration(Number(e.currentTarget.value))}/>
 
-				<div onClick={() => handleCreateTreatment()}
+				<button onClick={() => handleCreateTreatment()}
+					 disabled={isSubmitting}
 				className={"bg-indigo-500 hover:font-bold"}>
 					Maak behandeling aan
-				</div>
+				</button>
 			</form>
 		</>
 	)
