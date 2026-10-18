@@ -26,6 +26,11 @@ class LoginResponse implements LoginResponseContract
         $home = $user?->isAdmin() ? route('admin.dashboard') : Fortify::redirects('login');
         $intended = $request->session()->pull('url.intended');
 
+        // "The dashboard" means everyone's own dashboard (e.g. after logging out and in again)
+        if ($intended && parse_url($intended, PHP_URL_PATH) === parse_url(route('dashboard'), PHP_URL_PATH)) {
+            $intended = null;
+        }
+
         return redirect()->to($intended && $this->mayOpen($user, $intended) ? $intended : $home);
     }
 
@@ -36,12 +41,13 @@ class LoginResponse implements LoginResponseContract
     {
         $path = '/'.ltrim((string) parse_url($url, PHP_URL_PATH), '/');
 
-        if (Str::startsWith($path, '/admin')) {
-            return (bool) $user?->isAdmin();
+        // The appointment and treatment pages under /admin are shared by all staff
+        if (Str::startsWith($path, ['/appointments', '/treatments', '/admin/appointments', '/admin/treatments'])) {
+            return $user !== null && ! $user->isCustomer();
         }
 
-        if (Str::startsWith($path, ['/appointments', '/treatments'])) {
-            return $user !== null && ! $user->isCustomer();
+        if (Str::startsWith($path, '/admin')) {
+            return (bool) $user?->isAdmin();
         }
 
         return true;

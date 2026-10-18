@@ -15,11 +15,18 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\TreatmentHistoryController;
+use App\Support\OpeningHours;
 use Illuminate\Support\Facades\Route;
 
 // Always the welcome page; nobody is logged in automatically.
 // To look around as a customer, an admin uses "Bekijk als klant" on the customer's page.
-Route::inertia('/', 'welcome')->name('home');
+Route::inertia('/', 'welcome', [
+    // Same hours the booking uses, so the homepage can't show different times
+    'openingHours' => [
+        'open' => substr(OpeningHours::OPEN, 0, 5),
+        'close' => substr(OpeningHours::CLOSE, 0, 5),
+    ],
+])->name('home');
 
 // Back to the admin after "Bekijk als klant" (checked in the controller)
 Route::post('bekijk-als-klant/stoppen', [ImpersonationController::class, 'stop'])
@@ -74,8 +81,10 @@ Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('employees', EmployeeController::class);
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+});
 
-    // Admin versions of the appointment and treatment pages
+// The appointment and treatment pages, shared by admins and the other staff (dentists, assistants, ...)
+Route::middleware(['auth', 'Employee'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('appointments', AdminAppointmentController::class)->except('edit');
     Route::put('/appointments/{appointment}/room', [AdminAppointmentController::class, 'updateRoom'])->name('appointments.room');
     Route::resource('treatments', AdminTreatmentController::class)->except(['show', 'destroy']);

@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { Button } from '@/components/ui/button';
 import { logout } from '@/routes';
 
-/** Logs the user out; the server then sends them to the registration page. */
+/** Logs the user out; the server then sends them back to the homepage. */
 export function LogoutButton({
 	variant = 'outline',
 	size = 'sm',
