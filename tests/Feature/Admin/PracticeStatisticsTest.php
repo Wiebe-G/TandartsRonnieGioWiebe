@@ -12,7 +12,7 @@ beforeEach(function () {
 
     $this->dentist = User::factory()->role(Role::DENTIST)->create();
     $this->otherDentist = User::factory()->role(Role::DENTIST)->create();
-    $this->assistant = User::factory()->role('assistant')->create();
+    $this->assistant = User::factory()->role(Role::ASSISTANT)->create();
     $this->rooms = collect(['Kamer 1', 'Kamer 2', 'Kamer 3'])->map(fn ($name) => Room::create(['name' => $name]));
 
     $appointment = fn (array $attributes) => Appointment::create([

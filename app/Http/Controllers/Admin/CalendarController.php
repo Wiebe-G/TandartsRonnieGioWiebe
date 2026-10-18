@@ -46,7 +46,7 @@ class CalendarController extends Controller
             ],
             'options' => [
                 'dentists' => $employees->where('role_id', Role::idFor(Role::DENTIST))->values(),
-                'staff' => $employees->values(),
+                'assistants' => $employees->where('role_id', Role::idFor(Role::ASSISTANT))->values(),
                 'rooms' => Room::query()->orderBy('name')->get(['room_id', 'name']),
                 'statuses' => self::STATUSES,
             ],
@@ -63,7 +63,7 @@ class CalendarController extends Controller
             'starttime' => ['required', 'date_format:H:i'],
             'endtime' => ['required', 'date_format:H:i', 'after:starttime'],
             'dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
-            'assistant_id' => ['nullable', 'different:dentist_id', Rule::exists(User::class, 'id')->whereNot('role_id', Role::customerId())],
+            'assistant_id' => ['nullable', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
             'room_id' => ['nullable', Rule::exists(Room::class, 'room_id')],
             'status' => ['required', Rule::in(self::STATUSES)],
             'note' => ['nullable', 'string', 'max:255'],

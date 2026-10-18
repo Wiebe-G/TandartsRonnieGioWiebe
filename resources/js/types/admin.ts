@@ -130,7 +130,7 @@ export type CalendarAppointment = {
 
 export type CalendarOptions = {
 	dentists: CalendarEmployee[];
-	staff: CalendarEmployee[];
+	assistants: CalendarEmployee[];
 	rooms: { room_id: number; name: string }[];
 	statuses: string[];
 };

@@ -13,7 +13,7 @@ test('non-admins cannot open the admin pages', function (string $role) {
     $this->actingAs($user)->get(route('admin.users'))->assertForbidden();
     $this->actingAs($user)->get(route('admin.customers.index'))->assertForbidden();
     $this->actingAs($user)->get(route('admin.employees.index'))->assertForbidden();
-})->with([Role::CUSTOMER, Role::DENTIST, 'assistant', 'practice_manager']);
+})->with([Role::CUSTOMER, Role::DENTIST, Role::ASSISTANT, 'practice_manager']);
 
 test('admins can open the user management page', function () {
     User::factory()->count(3)->create();

@@ -133,3 +133,38 @@ test('back to back appointments are allowed', function () {
         ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)())
         ->assertSessionHasNoErrors();
 });
+
+test('an assistant can be assigned from the calendar', function () {
+    $assistant = User::factory()->role(Role::ASSISTANT)->create();
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $assistant->id]))
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh()->assistant_id)->toBe($assistant->id);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.calendar.index', ['employee' => $assistant->id, 'week' => '2026-10-21']))
+        ->assertInertia(fn ($page) => $page
+            ->has('options.assistants', 1)
+            ->has('week.days.2.appointments', 1));
+});
+
+test('only assistants can be assigned as assistant', function () {
+    $appointment = ($this->makeAppointment)();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $this->otherDentist->id]))
+        ->assertSessionHasErrors('assistant_id');
+});
+
+test('an assistant who is already busy cannot be double booked', function () {
+    $assistant = User::factory()->role(Role::ASSISTANT)->create();
+    ($this->makeAppointment)(['dentist_id' => $this->otherDentist->id, 'assistant_id' => $assistant->id]);
+    $appointment = ($this->makeAppointment)(['starttime' => '13:00:00', 'endtime' => '13:30:00']);
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), ($this->validUpdate)(['assistant_id' => $assistant->id]))
+        ->assertSessionHasErrors('starttime');
+});

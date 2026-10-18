@@ -10,7 +10,7 @@ beforeEach(function () {
 
 test('admins can list employees and filter them by role', function () {
     User::factory()->role(Role::DENTIST)->count(2)->create();
-    User::factory()->role('assistant')->create();
+    User::factory()->role(Role::ASSISTANT)->create();
     User::factory()->create();
 
     $this->actingAs($this->admin)
@@ -76,7 +76,7 @@ test('customers are not shown on the employee pages', function () {
 });
 
 test('admins can update an employee', function () {
-    $employee = User::factory()->role('assistant')->create();
+    $employee = User::factory()->role(Role::ASSISTANT)->create();
 
     $this->actingAs($this->admin)->get(route('admin.employees.edit', $employee))->assertOk();
 

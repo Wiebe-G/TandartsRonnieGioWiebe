@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\Role;
 use App\Models\Treatment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class AppointmentController extends Controller
@@ -33,7 +35,7 @@ class AppointmentController extends Controller
         return Inertia::render('Appointments/Create', [
             'Customers' => $Patients,
             'Treatments' => $Treatments,
-            'Users' => User::query()->get()->values(),
+            'Users' => User::query()->with('role')->get()->values(),
         ]);
     }
 
@@ -44,8 +46,9 @@ class AppointmentController extends Controller
     {
         $validated = $request->validate([
             'Customer_id' => ['required', 'exists:users,id'],
-            'Dentist_id' => ['required', 'exists:users,id'],
-            'Assistant_id' => ['required', 'exists:users,id'],
+            'Dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
+            // Een assistent is optioneel
+            'Assistant_id' => ['nullable', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
             'Date' => ['required', 'date'],
             'Type' => ['required', 'exists:treatment,treatment_id'],
             'Note' => ['required', 'string', 'max:255'],
@@ -59,11 +62,11 @@ class AppointmentController extends Controller
         $appointment = Appointment::create([
             'customer_id' => $Customer->id,
             'dentist_id' => $validated['Dentist_id'],
-            'assistant_id' => $validated['Assistant_id'],
+            'assistant_id' => $validated['Assistant_id'] ?? null,
             'date' => $tijd->toDateString(),
             'starttime' => $tijd->toTimeString(),
             'endtime' => $tijd->addMinutes($treatment->duration)->toTimeString(),
-            'status' => 'Nog niet denk ik idk',
+            'status' => 'scheduled',
             'note' => $validated['Note'],
         ]);
 
@@ -114,14 +117,13 @@ class AppointmentController extends Controller
         $Appointment = Appointment::query()->with('treatments')->find($validated['Appointment_Id']);
 
         $tijd = Carbon::parse($validated['Starttime']);
-        $endTime = $tijd->addMinutes($Appointment['Treatments'][0]['duration'])->toTimeString();
+        $endTime = $tijd->addMinutes($Appointment['treatments'][0]['duration'])->toTimeString();
 
         $Appointment->update([
             'note' => $validated['Note'],
             'date' => $validated['Date'],
             'starttime' => $validated['Starttime'],
             'endtime' => $endTime,
-            'status' => 'Nog niet denk ik idk',
         ]);
 
         return redirect()->route('appointments')

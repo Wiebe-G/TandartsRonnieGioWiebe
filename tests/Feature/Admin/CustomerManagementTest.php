@@ -48,7 +48,7 @@ test('admins can create a customer', function () {
 });
 
 test('a customer can only be linked to a dentist', function () {
-    $assistant = User::factory()->role('assistant')->create();
+    $assistant = User::factory()->role(Role::ASSISTANT)->create();
 
     $this->actingAs($this->admin)
         ->post(route('admin.customers.store'), [

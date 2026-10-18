@@ -144,7 +144,7 @@ export default function AppointmentEditDialog({
 										}
 									>
 										<option value="">Geen assistent</option>
-										{options.staff.map((employee) => (
+										{options.assistants.map((employee) => (
 											<option
 												key={employee.id}
 												value={employee.id}

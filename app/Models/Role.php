@@ -17,6 +17,8 @@ class Role extends Model
 
     public const DENTIST = 'dentist';
 
+    public const ASSISTANT = 'assistant';
+
     public const ADMIN = 'admin';
 
     protected $table = 'role';

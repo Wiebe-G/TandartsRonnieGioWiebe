@@ -78,7 +78,7 @@ export default function Show({}) {
 				<div className="flex gap-x-8">
 					<span>Klant: {Appointment.customer.firstname} {Appointment.customer.lastname}</span>
 					<span>Tandarts: {Appointment.dentist.firstname} {Appointment.dentist.lastname}</span>
-					<span>Assistent: {Appointment.assistant.firstname} {Appointment.assistant.lastname}</span>
+					<span>Assistent: {Appointment.assistant ? `${Appointment.assistant.firstname} ${Appointment.assistant.lastname}` : "Geen assistent"}</span>
 				</div>
 				<div>Soort behandeling: {Appointment.treatments[0].name}</div>
 				<label htmlFor="note">Notitie: </label>
