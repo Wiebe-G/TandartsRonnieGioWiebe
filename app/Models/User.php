@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -31,7 +32,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $phonenumber
  * @property Carbon|null $birthday
  * @property string $status
- * @property string|null $adress
+ * @property string|null $address
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -40,10 +41,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read Role $role
  * @property-read User|null $employee
+ * @property-read Postcode|null $postcode
+ * @property-read Collection<int, Appointment> $appointments
  *
  * @method static create(array $array)
  */
-#[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'adress'])]
+#[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'address'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[Appends(['name'])]
 class User extends Authenticatable
@@ -77,6 +80,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return BelongsTo<Role, $this>
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
      * The dentist assigned to this customer.
      *
      * @return BelongsTo<User, $this>
@@ -96,8 +107,59 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'employee_id');
     }
 
+    /**
+     * Feedback customers gave about this dentist.
+     *
+     * @return HasMany<Feedback, $this>
+     */
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(Feedback::class, 'dentist_id');
+    }
+
+    /**
+     * The full address row; users.address holds its key (e.g. "1234 AB 12").
+     * Not called address(), that name is already the column itself.
+     *
+     * @return BelongsTo<Postcode, $this>
+     */
+    public function postcode(): BelongsTo
+    {
+        return $this->belongsTo(Postcode::class, 'address', 'address');
+    }
+
+    /**
+     * The appointments this user has booked as a customer.
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'customer_id');
+    }
+
+    /**
+     * Dentists as {id, name} pairs, for the "choose your dentist" lists.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    public static function dentistOptions(): array
+    {
+        return array_values(static::query()
+            ->where('role_id', Role::dentistId())
+            ->orderBy('firstname')
+            ->get()
+            ->map(fn (User $dentist) => ['id' => $dentist->id, 'name' => $dentist->name])
+            ->all());
+    }
+
     public function isCustomer(): bool
     {
-        return $this->role->name === Role::CUSTOMER;
+        return $this->role?->name === Role::CUSTOMER;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role?->name === Role::ADMIN;
     }
 }

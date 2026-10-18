@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Admin\ImpersonationController;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +43,10 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user,
+                'isAdmin' => (bool) $user?->isAdmin(),
+                'isCustomer' => $user?->isCustomer() ?? false,
+                // Set while an admin uses "Bekijk als klant"
+                'impersonating' => $request->hasSession() && $request->session()->has(ImpersonationController::SESSION_KEY),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

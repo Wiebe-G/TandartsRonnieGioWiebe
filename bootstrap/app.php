@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\MustBeAdmin;
 use App\Http\Middleware\MustBeEmployee;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'Employee' => MustBeEmployee::class,
+            'Admin' => MustBeAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
