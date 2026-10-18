@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -43,6 +44,14 @@ class DatabaseSeeder extends Seeder
             'email' => 'jan@klant.nl',
             'password' => Hash::make('JanKlant'),
             'phonenumber' => 1234567890,
+        ]);
+
+        User::create([
+            'role_id' => Role::idFor(Role::ADMIN),
+            'firstname' => 'Admin',
+            'lastname' => 'Beheerder',
+            'email' => 'admin@tandarts.nl',
+            'password' => Hash::make('password'),
         ]);
     }
 }

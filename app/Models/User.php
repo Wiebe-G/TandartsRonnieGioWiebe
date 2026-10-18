@@ -31,7 +31,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $phonenumber
  * @property Carbon|null $birthday
  * @property string $status
- * @property string|null $adress
+ * @property string|null $address
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -43,7 +43,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  *
  * @method static create(array $array)
  */
-#[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'adress'])]
+#[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'address'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 #[Appends(['name'])]
 class User extends Authenticatable
@@ -77,6 +77,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return BelongsTo<Role, $this>
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    /**
      * The dentist assigned to this customer.
      *
      * @return BelongsTo<User, $this>
@@ -96,8 +104,23 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'employee_id');
     }
 
+    /**
+     * Feedback customers gave about this dentist.
+     *
+     * @return HasMany<Feedback, $this>
+     */
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(Feedback::class, 'dentist_id');
+    }
+
     public function isCustomer(): bool
     {
-        return $this->role->name === Role::CUSTOMER;
+        return $this->role?->name === Role::CUSTOMER;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role?->name === Role::ADMIN;
     }
 }

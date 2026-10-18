@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\CalendarController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TreatmentController;
@@ -32,6 +36,14 @@ Route::middleware(['auth', 'Employee'])->group(function () {
         ->name('treatments.create');
     Route::post('/treatments/create', [TreatmentController::class, 'store'])
         ->name('treatments.store');
+});
+
+Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', UserManagementController::class)->name('users');
+    Route::resource('customers', CustomerController::class);
+    Route::resource('employees', EmployeeController::class);
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
 });
 
 require __DIR__.'/settings.php';

@@ -9,7 +9,7 @@ export type User = {
     phonenumber: string | null;
     birthday: string | null;
     status: string;
-    adress: string | null;
+    address: string | null;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
@@ -20,6 +20,7 @@ export type User = {
 
 export type Auth = {
     user: User;
+    isAdmin: boolean;
 };
 
 export type TwoFactorSetupData = {

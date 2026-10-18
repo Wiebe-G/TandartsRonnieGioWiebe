@@ -1,6 +1,6 @@
 import {Link, usePage} from '@inertiajs/react';
 import {PageProps} from '@inertiajs/core';
-import {BookOpen, FolderGit2, LayoutGrid} from 'lucide-react';
+import {BookOpen, CalendarDays, FolderGit2, LayoutGrid, Stethoscope, UserCog, Users} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import {NavFooter} from '@/components/nav-footer';
 import {NavMain} from '@/components/nav-main';
@@ -15,6 +15,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import {dashboard} from '@/routes';
+import admin from '@/routes/admin';
 import type {NavItem} from '@/types';
 import type {User} from '@/types/Interfaces';
 
@@ -44,6 +45,30 @@ export function AppSidebar() {
 						href: '/treatments',
 						icon: LayoutGrid
 					}
+                ] : []
+        ),
+        ...(auth.isAdmin
+                ? [
+                    {
+                        title: 'Gebruikersbeheer',
+                        href: admin.users(),
+                        icon: UserCog
+                    },
+                    {
+                        title: 'Klanten',
+                        href: admin.customers.index(),
+                        icon: Users
+                    },
+                    {
+                        title: 'Medewerkers',
+                        href: admin.employees.index(),
+                        icon: Stethoscope
+                    },
+                    {
+                        title: 'Agenda',
+                        href: admin.calendar.index(),
+                        icon: CalendarDays
+                    }
                 ] : []
         )
     ];
