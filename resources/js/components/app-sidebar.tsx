@@ -1,5 +1,13 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    BookOpen,
+    CalendarDays,
+    CalendarPlus,
+    FolderGit2,
+    History,
+    LayoutGrid,
+    UserRound,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -14,9 +22,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import * as appointments from '@/routes/appointments';
+import { edit as editProfile } from '@/routes/profile';
+import { history } from '@/routes/treatments';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
     const dashboardUrl = dashboard();
 
     const mainNavItems: NavItem[] = [
@@ -24,6 +36,30 @@ export function AppSidebar() {
             title: 'Dashboard',
             href: dashboardUrl,
             icon: LayoutGrid,
+        },
+        {
+            title: 'Agenda',
+            href: appointments.index(),
+            icon: CalendarDays,
+        },
+        ...(auth.isCustomer
+            ? [
+                  {
+                      title: 'Afspraak maken',
+                      href: appointments.create(),
+                      icon: CalendarPlus,
+                  },
+                  {
+                      title: 'Behandelingsgeschiedenis',
+                      href: history(),
+                      icon: History,
+                  },
+              ]
+            : []),
+        {
+            title: 'Mijn profiel',
+            href: editProfile(),
+            icon: UserRound,
         },
     ];
 

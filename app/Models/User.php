@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Appends;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -40,6 +41,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $updated_at
  * @property-read Role $role
  * @property-read User|null $employee
+ * @property-read Postcode|null $address
+ * @property-read Collection<int, Appointment> $appointments
  */
 #[Fillable(['role_id', 'employee_id', 'firstname', 'lastname', 'email', 'password', 'phonenumber', 'birthday', 'status', 'adress'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -100,6 +103,39 @@ class User extends Authenticatable
     public function customers(): HasMany
     {
         return $this->hasMany(User::class, 'employee_id');
+    }
+
+    /**
+     * @return BelongsTo<Postcode, $this>
+     */
+    public function address(): BelongsTo
+    {
+        return $this->belongsTo(Postcode::class, 'adress', 'adress');
+    }
+
+    /**
+     * The appointments this user has booked as a customer.
+     *
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'customer_id');
+    }
+
+    /**
+     * Dentists as {id, name} pairs, for the "choose your dentist" lists.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    public static function dentistOptions(): array
+    {
+        return array_values(static::query()
+            ->where('role_id', Role::dentistId())
+            ->orderBy('firstname')
+            ->get()
+            ->map(fn (User $dentist) => ['id' => $dentist->id, 'name' => $dentist->name])
+            ->all());
     }
 
     public function isCustomer(): bool

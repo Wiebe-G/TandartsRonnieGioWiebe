@@ -55,13 +55,13 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users can logout', function () {
+test('users can logout and land on the registration page', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));
 
     $this->assertGuest();
-    $response->assertRedirect(route('home'));
+    $response->assertRedirect(route('register'));
 });
 
 test('users are rate limited', function () {

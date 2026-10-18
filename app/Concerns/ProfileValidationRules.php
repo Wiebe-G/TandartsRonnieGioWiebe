@@ -2,6 +2,7 @@
 
 namespace App\Concerns;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,26 @@ trait ProfileValidationRules
             'lastname' => $this->nameRules(),
             'email' => $this->emailRules($userId),
         ];
+    }
+
+    /**
+     * Get the validation rules for the dentist a customer chooses (optional).
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function dentistRules(): array
+    {
+        return ['nullable', 'integer', Rule::exists('users', 'id')->where('role_id', Role::dentistId())];
+    }
+
+    /**
+     * Get the validation rules used to validate phone numbers.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function phoneRules(bool $required = false): array
+    {
+        return [$required ? 'required' : 'nullable', 'string', 'max:20', 'regex:/^\+?[0-9\s\-()]{6,20}$/'];
     }
 
     /**

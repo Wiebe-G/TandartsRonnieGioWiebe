@@ -5,18 +5,20 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
+    dentists: { id: number; name: string }[];
 };
 
-export default function Register({ passwordRules }: Props) {
+export default function Register({ passwordRules, dentists }: Props) {
     return (
         <>
-            <Head title="Register" />
+            <Head title="Registreren" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
@@ -26,64 +28,105 @@ export default function Register({ passwordRules }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="firstname">First name</Label>
-                                <Input
-                                    id="firstname"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="given-name"
-                                    name="firstname"
-                                    placeholder="First name"
-                                />
-                                <InputError
-                                    message={errors.firstname}
-                                    className="mt-2"
-                                />
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="firstname">Voornaam</Label>
+                                    <Input
+                                        id="firstname"
+                                        type="text"
+                                        required
+                                        autoFocus
+                                        tabIndex={1}
+                                        autoComplete="given-name"
+                                        name="firstname"
+                                    />
+                                    <InputError
+                                        message={errors.firstname}
+                                        className="mt-2"
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="lastname">Achternaam</Label>
+                                    <Input
+                                        id="lastname"
+                                        type="text"
+                                        required
+                                        tabIndex={2}
+                                        autoComplete="family-name"
+                                        name="lastname"
+                                    />
+                                    <InputError
+                                        message={errors.lastname}
+                                        className="mt-2"
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="lastname">Last name</Label>
-                                <Input
-                                    id="lastname"
-                                    type="text"
-                                    required
-                                    tabIndex={1}
-                                    autoComplete="family-name"
-                                    name="lastname"
-                                    placeholder="Last name"
-                                />
-                                <InputError
-                                    message={errors.lastname}
-                                    className="mt-2"
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">E-mailadres</Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     required
-                                    tabIndex={2}
+                                    tabIndex={3}
                                     autoComplete="email"
                                     name="email"
-                                    placeholder="email@example.com"
+                                    placeholder="naam@voorbeeld.nl"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="phonenumber">
+                                    Telefoonnummer
+                                </Label>
+                                <Input
+                                    id="phonenumber"
+                                    type="tel"
+                                    required
+                                    tabIndex={4}
+                                    autoComplete="tel"
+                                    name="phonenumber"
+                                    placeholder="06 12345678"
+                                />
+                                <InputError message={errors.phonenumber} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="employee_id">
+                                    Kies uw tandarts{' '}
+                                    <span className="text-muted-foreground font-normal">
+                                        (optioneel)
+                                    </span>
+                                </Label>
+                                <NativeSelect
+                                    id="employee_id"
+                                    name="employee_id"
+                                    tabIndex={5}
+                                    defaultValue=""
+                                >
+                                    <option value="">Nog geen voorkeur</option>
+                                    {dentists.map((dentist) => (
+                                        <option
+                                            key={dentist.id}
+                                            value={dentist.id}
+                                        >
+                                            {dentist.name}
+                                        </option>
+                                    ))}
+                                </NativeSelect>
+                                <InputError message={errors.employee_id} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="password">Wachtwoord</Label>
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={3}
+                                    tabIndex={6}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder="Password"
                                     passwordrules={passwordRules}
                                 />
                                 <InputError message={errors.password} />
@@ -91,15 +134,14 @@ export default function Register({ passwordRules }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    Herhaal wachtwoord
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={4}
+                                    tabIndex={7}
                                     autoComplete="new-password"
                                     name="password_confirmation"
-                                    placeholder="Confirm password"
                                     passwordrules={passwordRules}
                                 />
                                 <InputError
@@ -110,22 +152,22 @@ export default function Register({ passwordRules }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={5}
+                                tabIndex={8}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
-                                Create account
+                                Account aanmaken
                             </Button>
                         </div>
 
                         <div className="text-muted-foreground text-center text-sm">
-                            Already have an account?{' '}
+                            Heeft u al een account?{' '}
                             <TextLink
                                 href={login()}
                                 data-test="login-link"
-                                tabIndex={6}
+                                tabIndex={9}
                             >
-                                Log in
+                                Inloggen
                             </TextLink>
                         </div>
                     </>
@@ -136,6 +178,7 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
+    title: 'Account aanmaken',
+    description:
+        'Vul uw gegevens in om een account bij de praktijk aan te maken',
 };

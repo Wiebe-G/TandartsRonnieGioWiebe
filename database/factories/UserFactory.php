@@ -50,6 +50,26 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate that the user is a dentist working at the practice.
+     */
+    public function dentist(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::dentistId(),
+        ]);
+    }
+
+    /**
+     * Indicate that the user is a dental assistant.
+     */
+    public function assistant(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::idFor(Role::ASSISTANT),
+        ]);
+    }
+
+    /**
      * Indicate that the model has two-factor authentication configured.
      */
     public function withTwoFactor(): static
