@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Actions\Appointments\AvailableSlots;
-use App\Models\Role;
 use App\Models\Treatment;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -27,7 +26,8 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'treatments' => ['required', 'array', 'min:1'],
             'treatments.*' => ['integer', Rule::exists('treatment', 'treatment_id')->where('active', true)],
-            'dentist_id' => ['required', 'integer', Rule::exists('users', 'id')->where('role_id', Role::dentistId())],
+            // Only the customer's own dentist; without an assigned dentist nothing is accepted
+            'dentist_id' => ['required', 'integer', Rule::in([$this->user()->assignedDentist()?->id])],
             'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'starttime' => ['required', 'date_format:H:i'],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -42,6 +42,14 @@ class StoreAppointmentRequest extends FormRequest
     public function after(): array
     {
         return [
+            // The profile has to be complete first (the dentist has its own message on dentist_id)
+            function (Validator $validator) {
+                $missing = array_diff($this->user()->missingBookingDetails(), ['tandarts']);
+
+                if ($missing !== []) {
+                    $validator->errors()->add('profile', 'Vul eerst uw '.implode(' en ', $missing).' in bij Mijn profiel. Daarna kunt u een afspraak maken.');
+                }
+            },
             function (Validator $validator) {
                 if ($validator->errors()->isNotEmpty()) {
                     return;
@@ -80,6 +88,18 @@ class StoreAppointmentRequest extends FormRequest
             'date' => 'datum',
             'starttime' => 'tijdstip',
             'note' => 'opmerking',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'dentist_id.in' => $this->user()->assignedDentist()
+                ? 'U kunt alleen een afspraak maken bij uw eigen tandarts.'
+                : 'U heeft nog geen tandarts. Kies eerst een tandarts in uw profiel.',
         ];
     }
 }

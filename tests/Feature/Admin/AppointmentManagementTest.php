@@ -5,6 +5,7 @@ use App\Models\Role;
 use App\Models\Room;
 use App\Models\Treatment;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -166,6 +167,8 @@ test('admins can open an appointment', function () {
 test('admins can reschedule an appointment and change its status', function () {
     ($this->plan)();
     $appointment = Appointment::query()->sole();
+    // Marking it completed is only possible once the (moved) appointment has started
+    $this->travelTo(Carbon::parse('2026-10-22 14:00:00'));
 
     $this->actingAs($this->admin)
         ->put(route('admin.appointments.update', $appointment), [
@@ -239,4 +242,80 @@ test('admins can delete an appointment', function () {
 
     expect(Appointment::query()->count())->toBe(0)
         ->and(DB::table('appointment_treatment')->count())->toBe(0);
+});
+
+test('an appointment can be completed once it has started, also after it ended', function (string $now) {
+    ($this->plan)(['starttime' => '10:00']); // 10:00-10:30 on Wednesday 21 October
+    $appointment = Appointment::query()->sole();
+
+    $this->travelTo(Carbon::parse($now));
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.appointments.complete', $appointment))
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.appointments.show', $appointment));
+
+    expect($appointment->refresh()->status)->toBe('completed');
+})->with([
+    'exactly at the start' => '2026-10-21 10:00:00',
+    'during' => '2026-10-21 10:15:00',
+    'running late' => '2026-10-21 10:45:00',
+    'the next day' => '2026-10-22 09:00:00',
+]);
+
+test('an appointment cannot be completed before it starts', function (string $now, string $message) {
+    ($this->plan)(['starttime' => '10:00']);
+    $appointment = Appointment::query()->sole();
+
+    $this->travelTo(Carbon::parse($now));
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.appointments.complete', $appointment))
+        ->assertSessionHasErrors(['complete' => $message]);
+
+    expect($appointment->refresh()->status)->toBe('scheduled');
+})->with([
+    'earlier that day' => ['2026-10-21 09:59:00', 'Deze afspraak is nog niet begonnen. Afronden kan vanaf 10:00.'],
+    'the day before' => ['2026-10-20 10:00:00', 'Deze afspraak is nog niet begonnen. Afronden kan vanaf 10:00 op woensdag 21 oktober.'],
+]);
+
+test('only planned appointments can be completed', function () {
+    ($this->plan)();
+    $appointment = Appointment::query()->sole();
+    $appointment->update(['status' => 'cancelled']);
+    $this->travelTo(Carbon::parse('2026-10-21 09:15:00'));
+
+    $this->actingAs($this->admin)
+        ->patch(route('admin.appointments.complete', $appointment))
+        ->assertSessionHasErrors('complete');
+
+    expect($appointment->refresh()->status)->toBe('cancelled');
+});
+
+test('choosing completed in the edit form follows the same rule', function () {
+    ($this->plan)(['starttime' => '10:00']);
+    $appointment = Appointment::query()->sole();
+    $edit = fn () => $this->actingAs($this->admin)->put(route('admin.appointments.update', $appointment), [
+        'date' => '2026-10-21', 'starttime' => '10:00', 'status' => 'completed', 'note' => '',
+    ]);
+
+    $this->travelTo(Carbon::parse('2026-10-21 08:00:00'));
+    $edit()->assertSessionHasErrors('status');
+    expect($appointment->refresh()->status)->toBe('scheduled');
+
+    $this->travelTo(Carbon::parse('2026-10-21 11:00:00'));
+    $edit()->assertSessionHasNoErrors();
+    expect($appointment->refresh()->status)->toBe('completed');
+});
+
+test('dentists and assistants can complete appointments too', function () {
+    ($this->plan)();
+    $appointment = Appointment::query()->sole();
+    $this->travelTo(Carbon::parse('2026-10-21 09:10:00'));
+
+    $this->actingAs($this->dentist)
+        ->patch(route('admin.appointments.complete', $appointment))
+        ->assertSessionHasNoErrors();
+
+    expect($appointment->refresh()->status)->toBe('completed');
 });

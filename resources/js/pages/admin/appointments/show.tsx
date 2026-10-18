@@ -1,5 +1,11 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, CalendarClock, Trash2 } from 'lucide-react';
+import {
+	ArrowLeft,
+	CalendarClock,
+	CircleAlert,
+	CircleCheck,
+	Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
 	statusBadgeClass,
@@ -134,6 +140,20 @@ export default function ShowAppointment({
 		);
 	};
 
+	// The server checks the time: only once the appointment has started
+	const [completing, setCompleting] = useState(false);
+	const complete = () => {
+		router.patch(
+			admin.appointments.complete.url(appointment.appointment_id),
+			{},
+			{
+				preserveScroll: true,
+				onStart: () => setCompleting(true),
+				onFinish: () => setCompleting(false),
+			},
+		);
+	};
+
 	const details: [string, string][] = [
 		['Klant', customerName],
 		[
@@ -172,6 +192,12 @@ export default function ShowAppointment({
 								Terug
 							</Link>
 						</Button>
+						{!editMode && appointment.status === 'scheduled' && (
+							<Button onClick={complete} disabled={completing}>
+								{completing ? <Spinner /> : <CircleCheck />}
+								Afronden
+							</Button>
+						)}
 						{!editMode && (
 							<Button
 								variant="outline"
@@ -212,6 +238,16 @@ export default function ShowAppointment({
 						</Dialog>
 					</div>
 				</div>
+
+				{errors.complete && (
+					<p
+						role="alert"
+						className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400"
+					>
+						<CircleAlert className="size-4 shrink-0" />
+						{errors.complete}
+					</p>
+				)}
 
 				<div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
 					<Card className="h-fit">

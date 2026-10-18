@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Appointment;
+use App\Models\Postcode;
 use App\Models\Treatment;
 use App\Models\User;
 use App\Notifications\AppointmentBooked;
@@ -15,7 +16,7 @@ beforeEach(function () {
     Notification::fake();
 
     $this->dentist = User::factory()->dentist()->create();
-    $this->customer = User::factory()->create(['employee_id' => $this->dentist->id]);
+    $this->customer = User::factory()->withAddress()->create(['employee_id' => $this->dentist->id]);
     $this->treatment = Treatment::factory()->create(['name' => 'Controle', 'duration' => 30]);
 });
 
@@ -57,11 +58,34 @@ test('customers can book a free time', function () {
     });
 });
 
-test('other dentists are suggested when the chosen dentist is fully booked', function () {
+test('the booking form only offers the customer their own dentist', function () {
+    User::factory()->dentist()->create(); // another dentist that must not show up
+
+    $this->actingAs($this->customer)
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dentists', 1)
+            ->where('dentists.0.id', $this->dentist->id)
+            ->where('defaultDentist', $this->dentist->id)
+            ->missing('alternatives')
+        );
+});
+
+test('customers cannot book with another dentist', function () {
     $otherDentist = User::factory()->dentist()->create();
+
+    $this->actingAs($this->customer)
+        ->post(route('appointments.store'), bookingData(['dentist_id' => $otherDentist->id]))
+        ->assertSessionHasErrors(['dentist_id' => 'U kunt alleen een afspraak maken bij uw eigen tandarts.']);
+
+    expect(Appointment::count())->toBe(0);
+});
+
+test('a fully booked own dentist means no free times, not another dentist', function () {
+    User::factory()->dentist()->create();
     Appointment::factory()->for($this->dentist, 'dentist')->create([
         'date' => '2026-10-20',
-        'starttime' => '08:00',
+        'starttime' => '09:00',
         'endtime' => '17:00',
     ]);
 
@@ -73,16 +97,39 @@ test('other dentists are suggested when the chosen dentist is fully booked', fun
         ]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('slots', [])
-            ->has('alternatives', 1)
-            ->where('alternatives.0.id', $otherDentist->id)
-            ->where('alternatives.0.freeSlots', 16) // 9:00-17:00 in half hours
+            ->has('dentists', 1)
+        );
+});
+
+test('customers without a dentist cannot book', function () {
+    $customer = User::factory()->create(['employee_id' => null]);
+
+    $this->actingAs($customer)
+        ->get(route('appointments.create'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dentists', 0)
+            ->where('defaultDentist', null)
         );
 
-    $this->actingAs($this->customer)
-        ->post(route('appointments.store'), bookingData(['dentist_id' => $otherDentist->id]))
-        ->assertSessionHasNoErrors();
+    $this->actingAs($customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasErrors(['dentist_id' => 'U heeft nog geen tandarts. Kies eerst een tandarts in uw profiel.']);
 
-    expect(Appointment::latest('appointment_id')->first()->dentist_id)->toBe($otherDentist->id);
+    expect(Appointment::count())->toBe(0);
+});
+
+test('an assigned employee who is not a dentist does not count as a dentist', function () {
+    $assistant = User::factory()->assistant()->create();
+    $customer = User::factory()->create(['employee_id' => $assistant->id]);
+
+    $this->actingAs($customer)
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page->has('dentists', 0));
+
+    $this->actingAs($customer)
+        ->post(route('appointments.store'), bookingData(['dentist_id' => $assistant->id]))
+        ->assertSessionHasErrors('dentist_id');
 });
 
 test('a time that is already taken cannot be booked', function () {
@@ -218,4 +265,71 @@ test('customers cannot cancel someone else\'s appointment', function () {
         ->assertForbidden();
 
     expect($appointment->refresh()->status)->toBe(Appointment::SCHEDULED);
+});
+
+test('the booking form lists what is missing from the profile', function () {
+    $customer = User::factory()->create(['employee_id' => null, 'phonenumber' => null, 'address' => null]);
+
+    $this->actingAs($customer)
+        ->get(route('appointments.create'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('missing', ['tandarts', 'adres', 'telefoonnummer']));
+
+    $this->actingAs($this->customer)
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page->where('missing', []));
+});
+
+test('customers without an address cannot book', function () {
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'address' => null]);
+
+    $this->actingAs($customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasErrors(['profile' => 'Vul eerst uw adres in bij Mijn profiel. Daarna kunt u een afspraak maken.']);
+
+    expect(Appointment::count())->toBe(0);
+});
+
+test('customers without a phone number cannot book', function () {
+    $customer = User::factory()->withAddress()->create(['employee_id' => $this->dentist->id]);
+    $customer->update(['phonenumber' => null]);
+
+    $this->actingAs($customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasErrors(['profile' => 'Vul eerst uw telefoonnummer in bij Mijn profiel. Daarna kunt u een afspraak maken.']);
+
+    expect(Appointment::count())->toBe(0);
+});
+
+test('an address without street, house number or city does not count', function () {
+    Postcode::create(['address' => '1234 AB 1', 'street' => '', 'house_number' => '1', 'residence' => '', 'city' => '']);
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'address' => '1234 AB 1']);
+
+    expect($customer->missingBookingDetails())->toBe(['adres']);
+});
+
+test('after filling in the profile the customer can book', function () {
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => null, 'address' => null]);
+
+    $this->actingAs($customer)
+        ->patch(route('profile.update'), [
+            'firstname' => $customer->firstname,
+            'lastname' => $customer->lastname,
+            'email' => $customer->email,
+            'phonenumber' => '06 12345678',
+            'street' => 'Dorpsstraat',
+            'house_number' => '12a',
+            'postcode' => '1234 AB',
+            'city' => 'Utrecht',
+            'employee_id' => $this->dentist->id,
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($customer->refresh()->missingBookingDetails())->toBe([]);
+
+    $this->actingAs($customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasNoErrors();
+
+    expect(Appointment::count())->toBe(1);
 });

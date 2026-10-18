@@ -23,12 +23,12 @@ beforeEach(function () {
         ...$attributes,
     ];
 
-    $this->plan = fn (array $attributes = []) => $this->actingAs($this->dentist)
+    $this->plan = fn (array $attributes = []) => $this->actingAs($this->assistant)
         ->post(route('appointments.staff.store'), ($this->payload)($attributes));
 });
 
 test('the create page offers dentists and assistants with their role', function () {
-    $this->actingAs($this->dentist)
+    $this->actingAs($this->assistant)
         ->get(route('appointments.staff.create'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -94,7 +94,7 @@ test('the end time is rounded up to the next half hour', function () {
 test('an appointment without an assistant can be opened', function () {
     ($this->plan)(['Assistant_id' => null]);
 
-    $this->actingAs($this->dentist)
+    $this->actingAs($this->assistant)
         ->get(route('appointments.view', Appointment::query()->sole()->appointment_id))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('Appointment.assistant', null));
@@ -105,7 +105,7 @@ test('an appointment can be moved and keeps its status', function () {
     $appointment = Appointment::query()->sole();
     $appointment->update(['status' => 'completed']);
 
-    $this->actingAs($this->dentist)
+    $this->actingAs($this->assistant)
         ->post(route('appointments.update'), [
             'Appointment_Id' => $appointment->appointment_id,
             'Note' => '',
@@ -126,7 +126,7 @@ test('moving follows the planning rules', function () {
     ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Date' => '2026-10-21 11:00:00']);
     $second = Appointment::query()->where('starttime', '11:00:00')->sole();
 
-    $move = fn (string $date, string $start) => $this->actingAs($this->dentist)->post(route('appointments.update'), [
+    $move = fn (string $date, string $start) => $this->actingAs($this->assistant)->post(route('appointments.update'), [
         'Appointment_Id' => $second->appointment_id,
         'Note' => '',
         'Date' => $date,
@@ -143,7 +143,7 @@ test('an appointment can be deleted', function () {
     ($this->plan)();
     $appointment = Appointment::query()->sole();
 
-    $this->actingAs($this->dentist)
+    $this->actingAs($this->assistant)
         ->post(route('appointments.delete'), ['id' => $appointment->appointment_id])
         ->assertRedirect(route('appointments'));
 

@@ -1,5 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { Check, Clock } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Check, Clock, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 import { create, index, store } from '@/routes/appointments';
+import { edit as editProfile } from '@/routes/profile';
 
 type Treatment = {
 	id: number;
@@ -31,7 +31,8 @@ type Props = {
 	defaultDentist: number | null;
 	duration: number;
 	slots: string[];
-	alternatives: (Dentist & { freeSlots: number })[];
+	/** Profile details still missing, e.g. ["adres", "telefoonnummer"] */
+	missing: string[];
 };
 
 type BookingForm = {
@@ -60,6 +61,14 @@ function addMinutes(time: string, minutes: number) {
 	return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+// What each missing profile detail means for the customer
+const missingLabels: Record<string, string> = {
+	tandarts:
+		'Een eigen tandarts (alleen bij die tandarts kunt u een afspraak maken)',
+	adres: 'Uw adres: straat, huisnummer, postcode en plaats',
+	telefoonnummer: 'Uw telefoonnummer',
+};
+
 function isWeekend(date: string) {
 	const day = new Date(`${date}T00:00:00`).getDay();
 
@@ -72,7 +81,7 @@ export default function CreateAppointment({
 	defaultDentist,
 	duration,
 	slots,
-	alternatives,
+	missing,
 }: Props) {
 	// After choosing everything the customer first sees a summary, and only books from there.
 	const [reviewing, setReviewing] = useState(false);
@@ -97,7 +106,7 @@ export default function CreateAppointment({
 
 		if (next.treatments.length > 0 && next.dentist_id && next.date) {
 			router.reload({
-				only: ['slots', 'duration', 'alternatives'],
+				only: ['slots', 'duration'],
 				data: {
 					treatments: next.treatments,
 					dentist: next.dentist_id,
@@ -139,6 +148,50 @@ export default function CreateAppointment({
 		(sum, treatment) => sum + Number(treatment.price),
 		0,
 	);
+
+	// Customers can only book with their own dentist, so without one there is nothing to book yet.
+	// Booking only works once the profile is complete: own dentist, address and phone number.
+	if (missing.length > 0 || dentists.length === 0) {
+		return (
+			<>
+				<Head title="Afspraak maken" />
+				<div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 md:p-6">
+					<Heading
+						title="Afspraak maken"
+						description="Kies een behandeling, uw tandarts en een moment dat u uitkomt."
+					/>
+					<Card>
+						<CardContent className="space-y-4 pt-6">
+							<div className="flex items-start gap-3">
+								<UserRoundX className="text-muted-foreground mt-0.5 size-5 shrink-0" />
+								<div className="space-y-2">
+									<p className="font-medium">
+										Vul eerst uw gegevens aan
+									</p>
+									<p className="text-muted-foreground text-sm">
+										Voordat u een afspraak kunt maken,
+										hebben we dit nog van u nodig:
+									</p>
+									<ul className="list-inside list-disc text-sm">
+										{missing.map((item) => (
+											<li key={item}>
+												{missingLabels[item] ?? item}
+											</li>
+										))}
+									</ul>
+								</div>
+							</div>
+							<Button asChild>
+								<Link href={editProfile()}>
+									Gegevens aanvullen in mijn profiel
+								</Link>
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			</>
+		);
+	}
 
 	if (reviewing) {
 		const endtime = addMinutes(form.data.starttime, duration);
@@ -340,24 +393,16 @@ export default function CreateAppointment({
 					<CardContent className="grid gap-4 sm:grid-cols-2">
 						<div className="grid gap-2">
 							<Label htmlFor="dentist_id">Tandarts</Label>
-							<NativeSelect
+							{/* Always your own dentist; another dentist cannot be chosen */}
+							<p
 								id="dentist_id"
-								value={form.data.dentist_id ?? ''}
-								onChange={(event) =>
-									update({
-										dentist_id: Number(event.target.value),
-									})
-								}
+								className="border-input bg-muted/40 flex h-9 items-center rounded-md border px-3 text-sm"
 							>
-								{dentists.map((dentist) => (
-									<option key={dentist.id} value={dentist.id}>
-										{dentist.name}
-										{dentist.id === defaultDentist
-											? ' (uw tandarts)'
-											: ''}
-									</option>
-								))}
-							</NativeSelect>
+								{chosenDentist?.name}
+								<span className="text-muted-foreground ml-1">
+									(uw tandarts)
+								</span>
+							</p>
 							<InputError message={form.errors.dentist_id} />
 						</div>
 
@@ -399,41 +444,11 @@ export default function CreateAppointment({
 								In het weekend is de praktijk gesloten. Kies een
 								werkdag.
 							</p>
-						) : slots.length === 0 && alternatives.length > 0 ? (
-							<div className="space-y-3">
-								<p className="text-sm">
-									{chosenDentist?.name ?? 'Deze tandarts'}{' '}
-									heeft op deze dag geen tijd meer. Deze
-									tandartsen hebben wel plek:
-								</p>
-								<div className="flex flex-wrap gap-2">
-									{alternatives.map((alternative) => (
-										<Button
-											key={alternative.id}
-											type="button"
-											variant="outline"
-											onClick={() =>
-												update({
-													dentist_id: alternative.id,
-												})
-											}
-										>
-											{alternative.name}
-											<span className="text-muted-foreground text-xs">
-												{alternative.freeSlots} vrije
-												tijden
-											</span>
-										</Button>
-									))}
-								</div>
-								<p className="text-muted-foreground text-sm">
-									Of kies een andere datum.
-								</p>
-							</div>
 						) : slots.length === 0 ? (
 							<p className="text-muted-foreground text-sm">
-								Op deze dag is niets meer vrij. Probeer een
-								andere datum.
+								{chosenDentist?.name ?? 'Uw tandarts'} heeft op
+								deze dag geen tijd meer. Probeer een andere
+								datum.
 							</p>
 						) : (
 							<div className="grid grid-cols-3 gap-2 sm:grid-cols-6">

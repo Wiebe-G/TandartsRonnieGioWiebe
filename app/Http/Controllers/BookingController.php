@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Appointments\AvailableSlots;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
-use App\Models\Role;
 use App\Models\Treatment;
 use App\Models\User;
 use App\Notifications\AppointmentBooked;
@@ -72,32 +71,18 @@ class BookingController extends Controller
         abort_unless($user->isCustomer(), 403);
 
         $treatments = Treatment::where('active', true)->orderBy('name')->get();
-        $dentists = User::where('role_id', Role::dentistId())->orderBy('firstname')->get();
+        // Customers can only book with the dentist assigned to them; without one they cannot book at all.
+        $dentist = $user->assignedDentist();
+        $dentists = collect($dentist ? [$dentist] : []);
 
         $chosenTreatments = $treatments->whereIn('treatment_id', array_map('intval', (array) $request->query('treatments', [])));
-        $dentist = $dentists->firstWhere('id', (int) $request->query('dentist'));
         $date = rescue(fn () => Carbon::createFromFormat('!Y-m-d', (string) $request->query('date')), null, report: false);
         $duration = AvailableSlots::durationFor($chosenTreatments);
 
         $slots = [];
-        $alternatives = [];
 
         if ($dentist && $date && $chosenTreatments->isNotEmpty()) {
             $slots = $availableSlots->for($dentist, $user, $date, $duration);
-
-            // The chosen dentist is full that day: suggest the dentists who still have room.
-            if ($slots === [] && ! $date->isWeekend()) {
-                $alternatives = $dentists
-                    ->reject(fn (User $other) => $other->is($dentist))
-                    ->map(fn (User $other) => [
-                        'id' => $other->id,
-                        'name' => $other->name,
-                        'freeSlots' => count($availableSlots->for($other, $user, $date, $duration)),
-                    ])
-                    ->filter(fn (array $other) => $other['freeSlots'] > 0)
-                    ->values()
-                    ->all();
-            }
         }
 
         return Inertia::render('afspraken/nieuw', [
@@ -112,10 +97,11 @@ class BookingController extends Controller
                 'id' => $dentist->id,
                 'name' => $dentist->name,
             ])->values(),
-            'defaultDentist' => $user->employee_id,
+            'defaultDentist' => $dentist?->id,
+            // Profile details still missing; booking is only possible when this is empty
+            'missing' => $user->missingBookingDetails(),
             'duration' => $duration,
             'slots' => $slots,
-            'alternatives' => $alternatives,
         ]);
     }
 

@@ -6,10 +6,12 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CustomerInvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RouteController;
@@ -45,14 +47,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('afspraken/{appointment}/feedback', [FeedbackController::class, 'store'])->name('appointments.feedback');
 
     Route::get('behandelingen', TreatmentHistoryController::class)->name('treatments.history');
+
+    // The customer's own invoices (the ones that were sent to them)
+    Route::get('facturen', [CustomerInvoiceController::class, 'index'])->name('customer.invoices.index');
+    Route::get('facturen/{invoice}', [CustomerInvoiceController::class, 'show'])->name('customer.invoices.show');
+    Route::post('facturen/{invoice}/betalen', [CustomerInvoiceController::class, 'pay'])->name('customer.invoices.pay');
 });
 
 Route::middleware(['auth', 'Employee'])->group(function () {
     Route::get('/appointments', [RouteController::class, 'appointments'])
         ->name('appointments');
+    // Making appointments: assistants and admins only
     Route::get('/appointments/create', [AppointmentController::class, 'create'])
+        ->middleware('AssistantOrAdmin')
         ->name('appointments.staff.create');
     Route::post('/appointments/create', [AppointmentController::class, 'store'])
+        ->middleware('AssistantOrAdmin')
         ->name('appointments.staff.store');
     Route::get('/appointments/view/{appointment}', [AppointmentController::class, 'show'])
         ->name('appointments.view');
@@ -83,10 +93,23 @@ Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
 });
 
+// Making appointments and sending invoices: assistants and admins only
+// (before the group below, so /appointments/create is not taken for an appointment id)
+Route::middleware(['auth', 'AssistantOrAdmin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('appointments', AdminAppointmentController::class)->only(['create', 'store']);
+
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/appointments/{appointment}/invoice', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('/invoices/{invoice}/versturen', [InvoiceController::class, 'send'])->name('invoices.send');
+    Route::patch('/invoices/{invoice}/betaling', [InvoiceController::class, 'updatePayment'])->name('invoices.payment');
+});
+
 // The appointment and treatment pages, shared by admins and the other staff (dentists, assistants, ...)
 Route::middleware(['auth', 'Employee'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('appointments', AdminAppointmentController::class)->except('edit');
+    Route::resource('appointments', AdminAppointmentController::class)->except(['create', 'store', 'edit']);
     Route::put('/appointments/{appointment}/room', [AdminAppointmentController::class, 'updateRoom'])->name('appointments.room');
+    Route::patch('/appointments/{appointment}/afronden', [AdminAppointmentController::class, 'complete'])->name('appointments.complete');
     Route::resource('treatments', AdminTreatmentController::class)->except(['show', 'destroy']);
 });
 

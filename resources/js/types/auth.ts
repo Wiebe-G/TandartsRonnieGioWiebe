@@ -22,6 +22,8 @@ export type Auth = {
 	user: User;
 	isAdmin: boolean;
 	isCustomer: boolean;
+	/** Making appointments and sending invoices: assistants and admins only. */
+	canPlanAndInvoice: boolean;
 	/** True while an admin looks around via "Bekijk als klant". */
 	impersonating: boolean;
 };

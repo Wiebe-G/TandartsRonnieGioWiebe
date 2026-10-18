@@ -38,6 +38,8 @@ export default function Dashboard() {
 	});
 
 	const isCustomer = auth.user.role_id == 1;
+	// Making appointments: assistants and admins only
+	const canPlan = usePage().props.auth.canPlanAndInvoice;
 	// Klanten zien hun eigen afspraken, medewerkers die waar ze tandarts of assistent zijn
 	const NextAppointment = isCustomer
 		? Appointments[0]
@@ -57,7 +59,8 @@ export default function Dashboard() {
 								: 'Je volgende afspraak en je planning'
 						}
 					/>
-					{!isCustomer && (
+					{/* Making appointments: assistants and admins only */}
+					{canPlan && (
 						<Button asChild>
 							<Link href={admin.appointments.create()}>
 								<Plus />

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { CalendarCheck, CalendarClock, Plus } from 'lucide-react';
 import {
 	statusClass,
@@ -71,6 +71,7 @@ export default function AppointmentsIndex({
 }: {
 	appointments: CalendarAppointment[];
 }) {
+	const { auth } = usePage().props;
 	const today = localDate();
 	const appointmentsToday = appointments.filter(
 		(appointment) => appointment.date.slice(0, 10) === today,
@@ -97,12 +98,15 @@ export default function AppointmentsIndex({
 						title="Afspraken"
 						description={`${appointmentsToday.length} vandaag · ${upcoming} gepland na vandaag`}
 					/>
-					<Button asChild>
-						<Link href={admin.appointments.create()}>
-							<Plus />
-							Nieuwe afspraak
-						</Link>
-					</Button>
+					{/* Making appointments: assistants and admins only */}
+					{auth.canPlanAndInvoice && (
+						<Button asChild>
+							<Link href={admin.appointments.create()}>
+								<Plus />
+								Nieuwe afspraak
+							</Link>
+						</Button>
+					)}
 				</div>
 
 				<div className="grid gap-4 md:grid-cols-2">

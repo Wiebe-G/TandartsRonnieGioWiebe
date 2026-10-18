@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Postcode;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -82,6 +83,26 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role_id' => Role::idFor(Role::ASSISTANT),
         ]);
+    }
+
+    /**
+     * A customer whose profile is complete enough to book: an address and a phone number.
+     */
+    public function withAddress(): static
+    {
+        return $this->state(function (array $attributes) {
+            $houseNumber = (string) fake()->unique()->numberBetween(1, 9999);
+            $key = Postcode::keyFor('1234AB', $houseNumber);
+
+            Postcode::query()->firstOrCreate(['address' => $key], [
+                'street' => 'Dorpsstraat',
+                'house_number' => $houseNumber,
+                'residence' => 'Utrecht',
+                'city' => 'Utrecht',
+            ]);
+
+            return ['address' => $key, 'phonenumber' => '06 12345678'];
+        });
     }
 
     /**

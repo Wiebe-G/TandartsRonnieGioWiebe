@@ -156,6 +156,10 @@ class AppointmentController extends Controller
         ]);
         $appointment = Appointment::query()->find($validated['id']);
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
+        // Een afspraak met een factuur blijft bestaan
+        if ($appointment->invoice()->exists()) {
+            throw ValidationException::withMessages(['id' => 'Deze afspraak heeft al een factuur en kan niet meer verwijderd worden.']);
+        }
         // De koppeling met de behandeling houdt het verwijderen tegen, dus die gaat eerst
         DB::table('appointment_treatment')->where('appointment_id', $appointment->appointment_id)->delete();
         $appointment->delete();

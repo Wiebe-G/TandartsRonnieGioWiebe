@@ -47,13 +47,33 @@ test('all staff share the appointment and treatment pages, customers do not', fu
     $employee = User::factory()->role($role)->create();
 
     $this->actingAs($employee)->get(route('admin.appointments.index'))->assertOk();
-    $this->actingAs($employee)->get(route('admin.appointments.create'))->assertOk();
     $this->actingAs($employee)->get(route('admin.treatments.index'))->assertOk();
 
     $customer = User::factory()->create();
     $this->actingAs($customer)->get(route('admin.appointments.index'))->assertForbidden();
     $this->actingAs($customer)->get(route('admin.treatments.index'))->assertForbidden();
 })->with([Role::DENTIST, Role::ASSISTANT, Role::ADMIN]);
+
+test('only assistants and admins can make appointments', function (string $role, bool $allowed) {
+    $employee = User::factory()->role($role)->create();
+
+    $shared = $this->actingAs($employee)->get(route('admin.appointments.create'));
+    $old = $this->actingAs($employee)->get(route('appointments.staff.create'));
+
+    if ($allowed) {
+        $shared->assertOk();
+        $old->assertOk();
+    } else {
+        $shared->assertForbidden();
+        $old->assertForbidden();
+        $this->actingAs($employee)->post(route('admin.appointments.store'), [])->assertForbidden();
+        $this->actingAs($employee)->post(route('appointments.staff.store'), [])->assertForbidden();
+    }
+})->with([
+    'assistant' => [Role::ASSISTANT, true],
+    'admin' => [Role::ADMIN, true],
+    'dentist' => [Role::DENTIST, false],
+]);
 
 test('the rest of the admin pages stay admin only', function () {
     $dentist = User::factory()->role(Role::DENTIST)->create();

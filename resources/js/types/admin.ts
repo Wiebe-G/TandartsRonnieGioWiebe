@@ -149,3 +149,40 @@ export type CustomerOption = Pick<
 	ManagedUser,
 	'id' | 'firstname' | 'lastname' | 'name' | 'employee_id'
 >;
+
+export type InvoiceSummary = {
+	invoice_id: number;
+	number: string;
+	invoicedate: string;
+	expiration_date: string;
+	amount: string;
+	sent_at: string | null;
+	paid_at: string | null;
+	/** pending = openstaand, paid = betaald */
+	status: 'pending' | 'paid';
+	/** Pending while the payment date has passed */
+	overdue: boolean;
+	customer_name: string | null;
+	customer_email: string | null;
+	treatments: string[];
+};
+
+export type InvoiceDetail = InvoiceSummary & {
+	appointment: {
+		date: string;
+		starttime: string;
+		dentist: string | null;
+		treatments: { name: string; price: string }[];
+	};
+	customer: {
+		name: string;
+		email: string;
+		address: { street: string; city: string } | null;
+	};
+};
+
+export type AppointmentToInvoice = CalendarAppointment & {
+	customer: (CalendarAppointment['customer'] & { email?: string }) | null;
+	treatments: { treatment_id: number; name: string; price: string }[];
+	total: string;
+};

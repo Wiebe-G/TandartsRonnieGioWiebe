@@ -65,7 +65,8 @@ test('a treatment can be edited and made inactive', function () {
 test('inactive treatments are not offered for new appointments', function () {
     $this->treatment->update(['active' => false]);
 
-    $this->actingAs($this->employee)
+    // Making appointments is for assistants (and admins)
+    $this->actingAs(User::factory()->role(Role::ASSISTANT)->create())
         ->get(route('appointments.staff.create'))
         ->assertInertia(fn ($page) => $page->has('Treatments', 0));
 });

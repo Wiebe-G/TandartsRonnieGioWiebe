@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\AppointmentConflicts;
 use App\Support\AppointmentEditOptions;
 use App\Support\OpeningHours;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -145,6 +146,11 @@ class AppointmentController extends Controller
             'room_id' => $appointment->room_id,
         ], $appointment);
 
+        // Choosing "Afgerond" here follows the same rule as the Afronden button
+        if ($validated['status'] === Appointment::COMPLETED && $appointment->status !== Appointment::COMPLETED) {
+            $this->ensureCompletableNow($validated['date'], $start, 'status');
+        }
+
         $appointment->update([
             'date' => $validated['date'],
             'starttime' => $start,
@@ -156,6 +162,42 @@ class AppointmentController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Afspraak aangepast.']);
 
         return to_route('admin.appointments.show', $appointment);
+    }
+
+    /**
+     * Mark the appointment as completed; possible once it has started (also after it ended).
+     */
+    public function complete(Appointment $appointment): RedirectResponse
+    {
+        if ($appointment->status !== Appointment::SCHEDULED) {
+            throw ValidationException::withMessages([
+                'complete' => 'Alleen geplande afspraken kunnen afgerond worden.',
+            ]);
+        }
+
+        $this->ensureCompletableNow($appointment->date->toDateString(), $appointment->starttime, 'complete');
+
+        $appointment->update(['status' => Appointment::COMPLETED]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Afspraak afgerond.']);
+
+        return to_route('admin.appointments.show', $appointment);
+    }
+
+    /**
+     * An appointment can be completed once it has started: during it, and also afterwards
+     * (an appointment that ran late, or is marked as completed later). Not before it starts.
+     */
+    private function ensureCompletableNow(string $date, string $start, string $field): void
+    {
+        $startsAt = CarbonImmutable::parse("{$date} {$start}");
+
+        if (CarbonImmutable::now()->lt($startsAt)) {
+            throw ValidationException::withMessages([
+                $field => 'Deze afspraak is nog niet begonnen. Afronden kan vanaf '.$startsAt->format('H:i').
+                    ($startsAt->isToday() ? '' : ' op '.$startsAt->locale('nl')->translatedFormat('l j F')).'.',
+            ]);
+        }
     }
 
     public function updateRoom(Request $request, Appointment $appointment): RedirectResponse
@@ -178,6 +220,13 @@ class AppointmentController extends Controller
 
     public function destroy(Appointment $appointment): RedirectResponse
     {
+        // An invoiced appointment stays, so the invoice keeps pointing at what was done
+        if ($appointment->invoice()->exists()) {
+            throw ValidationException::withMessages([
+                'complete' => 'Deze afspraak heeft al een factuur en kan niet meer verwijderd worden.',
+            ]);
+        }
+
         DB::transaction(function () use ($appointment) {
             // The treatment link restricts deleting the appointment, so it goes first
             DB::table('appointment_treatment')->where('appointment_id', $appointment->appointment_id)->delete();

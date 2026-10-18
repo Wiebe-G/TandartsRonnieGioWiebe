@@ -153,6 +153,50 @@ class User extends Authenticatable
             ->all());
     }
 
+    /**
+     * The dentist assigned to this customer, or null when they have none (or it is not a dentist).
+     * Customers can only book appointments with this dentist.
+     */
+    public function assignedDentist(): ?User
+    {
+        $dentist = $this->employee;
+
+        return $dentist && (int) $dentist->role_id === Role::dentistId() ? $dentist : null;
+    }
+
+    /**
+     * What a customer still has to fill in (in their profile) before they can book an appointment.
+     *
+     * @return list<string> e.g. ['adres', 'telefoonnummer'], empty when everything is there
+     */
+    public function missingBookingDetails(): array
+    {
+        $address = $this->postcode;
+        $addressComplete = $address
+            && filled($address->street)
+            && filled($address->house_number)
+            && filled($address->city);
+
+        return array_values(array_filter([
+            $this->assignedDentist() ? null : 'tandarts',
+            $addressComplete ? null : 'adres',
+            filled($this->phonenumber) ? null : 'telefoonnummer',
+        ]));
+    }
+
+    public function isAssistant(): bool
+    {
+        return $this->role?->name === Role::ASSISTANT;
+    }
+
+    /**
+     * Making appointments and sending invoices is for assistants and admins only.
+     */
+    public function canPlanAndInvoice(): bool
+    {
+        return $this->isAssistant() || $this->isAdmin();
+    }
+
     public function isCustomer(): bool
     {
         return $this->role?->name === Role::CUSTOMER;

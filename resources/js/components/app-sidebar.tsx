@@ -5,6 +5,7 @@ import {
 	CalendarDays,
 	CalendarPlus,
 	ClipboardList,
+	ReceiptText,
 	FolderGit2,
 	History,
 	LayoutGrid,
@@ -29,6 +30,7 @@ import {
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import * as appointments from '@/routes/appointments';
+import * as customerInvoices from '@/routes/customer/invoices';
 import { edit as editProfile } from '@/routes/profile';
 import { history } from '@/routes/treatments';
 import type { NavItem } from '@/types';
@@ -62,6 +64,11 @@ export function AppSidebar() {
 						href: history(),
 						icon: History,
 					},
+					{
+						title: 'Mijn facturen',
+						href: customerInvoices.index(),
+						icon: ReceiptText,
+					},
 				]
 			: []),
 		// All staff (admins included) share the same appointment and treatment pages
@@ -76,6 +83,16 @@ export function AppSidebar() {
 						title: 'Behandelingen',
 						href: admin.treatments.index(),
 						icon: ClipboardList,
+					},
+				]
+			: []),
+		// Sending invoices: assistants and admins only
+		...(auth.canPlanAndInvoice
+			? [
+					{
+						title: 'Facturen',
+						href: admin.invoices.index(),
+						icon: ReceiptText,
 					},
 				]
 			: []),

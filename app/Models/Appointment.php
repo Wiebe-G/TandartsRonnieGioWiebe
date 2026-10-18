@@ -115,6 +115,14 @@ class Appointment extends Model
     }
 
     /**
+     * @return HasOne<Invoice, $this>
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class, 'appointment_id');
+    }
+
+    /**
      * Moment the appointment starts (date + start time).
      */
     public function startsAt(): CarbonImmutable

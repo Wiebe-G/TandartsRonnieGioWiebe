@@ -45,6 +45,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
                 'isAdmin' => (bool) $user?->isAdmin(),
                 'isCustomer' => $user?->isCustomer() ?? false,
+                // Making appointments and sending invoices: assistants and admins only
+                'canPlanAndInvoice' => (bool) $user?->canPlanAndInvoice(),
                 // Set while an admin uses "Bekijk als klant"
                 'impersonating' => $request->hasSession() && $request->session()->has(ImpersonationController::SESSION_KEY),
             ],
