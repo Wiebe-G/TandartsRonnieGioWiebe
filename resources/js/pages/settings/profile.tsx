@@ -1,10 +1,12 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import { CalendarX } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { LogoutButton } from '@/components/logout-button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,11 +31,13 @@ export default function Profile({
 	status,
 	address,
 	dentists,
+	missingBookingDetails,
 }: {
 	mustVerifyEmail: boolean;
 	status?: string;
 	address: Address | null;
 	dentists: { id: number; name: string }[] | null;
+	missingBookingDetails: string[];
 }) {
 	const { auth } = usePage<PageProps>().props;
 
@@ -42,6 +46,31 @@ export default function Profile({
 			<Head title="Mijn profiel" />
 
 			<h1 className="sr-only">Mijn profiel</h1>
+
+			{missingBookingDetails.length > 0 && (
+				<Alert>
+					<CalendarX />
+					<AlertTitle>
+						Vul uw gegevens aan om een afspraak te maken
+					</AlertTitle>
+					<AlertDescription>
+						<p>
+							U kunt pas online een afspraak maken als dit is
+							ingevuld:
+						</p>
+						<ul className="list-inside list-disc">
+							{missingBookingDetails.map((detail) => (
+								<li
+									key={detail}
+									className="first-letter:uppercase"
+								>
+									{detail}
+								</li>
+							))}
+						</ul>
+					</AlertDescription>
+				</Alert>
+			)}
 
 			<Form
 				{...ProfileController.update.form()}

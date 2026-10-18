@@ -153,6 +153,27 @@ class User extends Authenticatable
             ->all());
     }
 
+    /**
+     * What a customer still has to fill in on their profile before they can book an appointment.
+     * Empty when everything is there.
+     *
+     * @return list<string>
+     */
+    public function missingBookingDetails(): array
+    {
+        return array_keys(array_filter([
+            'een vaste tandarts' => $this->employee_id === null,
+            'uw telefoonnummer' => blank($this->phonenumber),
+            'uw geboortedatum' => $this->birthday === null,
+            'uw adres' => blank($this->address),
+        ]));
+    }
+
+    public function canBook(): bool
+    {
+        return $this->missingBookingDetails() === [];
+    }
+
     public function isCustomer(): bool
     {
         return $this->role?->name === Role::CUSTOMER;

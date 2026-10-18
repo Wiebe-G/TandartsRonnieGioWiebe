@@ -15,7 +15,7 @@ beforeEach(function () {
     Notification::fake();
 
     $this->dentist = User::factory()->dentist()->create();
-    $this->customer = User::factory()->create(['employee_id' => $this->dentist->id]);
+    $this->customer = User::factory()->readyToBook($this->dentist)->create();
     $this->treatment = Treatment::factory()->create(['name' => 'Controle', 'duration' => 30]);
 });
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Postcode;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -87,6 +88,21 @@ class UserFactory extends Factory
     /**
      * Indicate that the model has two-factor authentication configured.
      */
+    public function readyToBook(?User $dentist = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'employee_id' => $dentist->id ?? User::factory()->dentist(),
+            'phonenumber' => '06 12345678',
+            'birthday' => '1990-05-17',
+            'address' => fn () => Postcode::firstOrCreate(['address' => '1234 AB 12'], [
+                'street' => 'Dorpsstraat',
+                'house_number' => '12',
+                'city' => 'Hengelo',
+                'residence' => 'Hengelo',
+            ])->address,
+        ]);
+    }
+
     public function withTwoFactor(): static
     {
         return $this->state(fn (array $attributes) => [

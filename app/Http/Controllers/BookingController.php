@@ -64,12 +64,16 @@ class BookingController extends Controller
     /**
      * The booking form. Free times are recalculated whenever the customer changes a choice.
      */
-    public function create(Request $request, AvailableSlots $availableSlots): Response
+    public function create(Request $request, AvailableSlots $availableSlots): Response|RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
 
         abort_unless($user->isCustomer(), 403);
+
+        if (! $user->canBook()) {
+            return $this->completeProfileFirst($user);
+        }
 
         $treatments = Treatment::where('active', true)->orderBy('name')->get();
         $dentists = User::where('role_id', Role::dentistId())->orderBy('firstname')->get();
@@ -121,6 +125,13 @@ class BookingController extends Controller
 
     public function store(StoreAppointmentRequest $request): RedirectResponse
     {
+        /** @var User $user */
+        $user = $request->user();
+
+        if (! $user->canBook()) {
+            return $this->completeProfileFirst($user);
+        }
+
         $start = Carbon::parse($request->string('date').' '.$request->string('starttime'));
 
         $appointment = Appointment::create([
@@ -162,6 +173,18 @@ class BookingController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'De afspraak is geannuleerd. U ontvangt een bevestiging per e-mail.']);
 
         return back();
+    }
+
+    /**
+     * Send the customer to their profile with a list of what is still missing.
+     */
+    private function completeProfileFirst(User $user): RedirectResponse
+    {
+        $missing = collect($user->missingBookingDetails())->join(', ', ' en ');
+
+        Inertia::flash('toast', ['type' => 'error', 'message' => "Vul eerst {$missing} in op uw profiel, daarna kunt u een afspraak maken."]);
+
+        return to_route('profile.edit');
     }
 
     /**
