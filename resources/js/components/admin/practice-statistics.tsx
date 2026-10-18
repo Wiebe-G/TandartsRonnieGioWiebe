@@ -225,7 +225,9 @@ export default function PracticeStatistics({
 										{dentist.percentage !== null ? (
 											<span className="flex items-center gap-2">
 												<SatisfactionBar
-													percentage={dentist.percentage}
+													percentage={
+														dentist.percentage
+													}
 												/>
 												<span className="tabular-nums">
 													{dentist.percentage}%
