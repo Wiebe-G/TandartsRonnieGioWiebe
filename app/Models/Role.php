@@ -15,6 +15,10 @@ class Role extends Model
 {
     public const CUSTOMER = 'customer';
 
+    public const DENTIST = 'dentist';
+
+    public const ADMIN = 'admin';
+
     protected $table = 'role';
 
     protected $primaryKey = 'role_id';
@@ -29,8 +33,13 @@ class Role extends Model
         return $this->hasMany(User::class, 'role_id');
     }
 
+    public static function idFor(string $name): int
+    {
+        return static::query()->where('name', $name)->value('role_id');
+    }
+
     public static function customerId(): int
     {
-        return static::query()->where('name', self::CUSTOMER)->value('role_id');
+        return static::idFor(self::CUSTOMER);
     }
 }

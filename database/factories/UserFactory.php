@@ -40,6 +40,21 @@ class UserFactory extends Factory
     }
 
     /**
+     * Give the user the role with the given name, e.g. Role::DENTIST.
+     */
+    public function role(string $name): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::idFor($name),
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->role(Role::ADMIN);
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static
