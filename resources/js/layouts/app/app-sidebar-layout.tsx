@@ -1,3 +1,4 @@
+import ImpersonationBanner from '@/components/admin/impersonation-banner';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -12,6 +13,7 @@ export default function AppSidebarLayout({
 		<AppShell variant="sidebar">
 			<AppSidebar />
 			<AppContent variant="sidebar" className="min-w-0 overflow-x-clip">
+				<ImpersonationBanner />
 				<AppSidebarHeader breadcrumbs={breadcrumbs} />
 				{children}
 			</AppContent>

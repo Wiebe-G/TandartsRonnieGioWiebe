@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
@@ -14,21 +15,16 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\TreatmentHistoryController;
-use App\Models\Role;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-if (app()->environment('local') && config('app.demo_login')) {
-    // Local preview only (DEMO_LOGIN=true in .env): open the customer dashboard as the seeded demo customer without logging in.
-    Route::get('/', function () {
-        Auth::login(User::where('role_id', Role::customerId())->orderBy('id')->firstOrFail());
+// Always the welcome page; nobody is logged in automatically.
+// To look around as a customer, an admin uses "Bekijk als klant" on the customer's page.
+Route::inertia('/', 'welcome')->name('home');
 
-        return redirect()->route('dashboard');
-    })->name('home');
-} else {
-    Route::inertia('/', 'welcome')->name('home');
-}
+// Back to the admin after "Bekijk als klant" (checked in the controller)
+Route::post('bekijk-als-klant/stoppen', [ImpersonationController::class, 'stop'])
+    ->middleware('auth')
+    ->name('impersonation.stop');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Customers get their own start screen, everyone else the regular dashboard
@@ -74,6 +70,7 @@ Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
     Route::get('/users', UserManagementController::class)->name('users');
     Route::resource('customers', CustomerController::class);
+    Route::post('/customers/{customer}/bekijk-als-klant', [ImpersonationController::class, 'start'])->name('customers.impersonate');
     Route::resource('employees', EmployeeController::class);
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');

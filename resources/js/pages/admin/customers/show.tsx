@@ -1,5 +1,5 @@
-import { Head, Link } from '@inertiajs/react';
-import { Pencil } from 'lucide-react';
+import { Form, Head, Link } from '@inertiajs/react';
+import { Eye, Pencil } from 'lucide-react';
 import AppointmentEditDialog from '@/components/admin/appointment-edit-dialog';
 import {
 	statusClass,
@@ -38,6 +38,21 @@ export default function ShowCustomer({
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<Heading title={customer.name} description="Klant" />
 					<div className="flex gap-2">
+						{/* Log in as this customer to see exactly what they see */}
+						<Form
+							{...admin.customers.impersonate.form(customer.id)}
+						>
+							{({ processing }) => (
+								<Button
+									type="submit"
+									variant="outline"
+									disabled={processing}
+								>
+									<Eye />
+									Bekijk als klant
+								</Button>
+							)}
+						</Form>
 						<Button asChild variant="outline">
 							<Link href={admin.customers.edit(customer.id)}>
 								<Pencil />
