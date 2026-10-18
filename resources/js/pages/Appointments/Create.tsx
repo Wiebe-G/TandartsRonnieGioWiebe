@@ -25,13 +25,12 @@ export default function Create({}) {
 	let Dentists: User[] = [];
 	let Assistants: User[] = [];
 
-	// Op rolnaam filteren, de role_id's kunnen per database verschillen
 	Users.map((user) => {
-		if(user.role?.name == 'dentist')
+		if(user.role_id == 2)
 		{
 			Dentists = [... Dentists, user]
 		}
-		if(user.role?.name == 'assistant')
+		if(user.role_id == 4)
 		{
 			Assistants = [... Assistants, user]
 		}
@@ -60,7 +59,7 @@ export default function Create({}) {
 			{
 				Customer_id: selectedUser.id,
 				Dentist_id: selectedDentist,
-				Assistant_id: selectedAssistant || null,
+				Assistant_id: selectedAssistant,
 				Date: statefulDate,
 				Type: selectedTreatmentId,
 				Note: note

@@ -2,7 +2,7 @@ export interface Appointment {
     appointment_id: number;
     customer_id: number;
     dentist_id: number;
-    assistant_id: number | null;
+    assistant_id: number;
     date: Date;
     starttime: Date;
     endtime: Date;
@@ -11,7 +11,7 @@ export interface Appointment {
 	customer: User;
 	treatments: Treatment[];
 	dentist: User;
-	assistant: User | null;
+	assistant: User;
 }
 
 interface Role {
@@ -23,7 +23,6 @@ export interface User {
 	user: User;
     id: number;
     role_id: number;
-    role?: Role;
     firstname: string;
     lastname: string;
     email: string;
