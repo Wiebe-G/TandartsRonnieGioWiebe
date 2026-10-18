@@ -74,8 +74,10 @@ Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('employees', EmployeeController::class);
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+});
 
-    // Admin versions of the appointment and treatment pages
+// The appointment and treatment pages, shared by admins and the other staff (dentists, assistants, ...)
+Route::middleware(['auth', 'Employee'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('appointments', AdminAppointmentController::class)->except('edit');
     Route::put('/appointments/{appointment}/room', [AdminAppointmentController::class, 'updateRoom'])->name('appointments.room');
     Route::resource('treatments', AdminTreatmentController::class)->except(['show', 'destroy']);

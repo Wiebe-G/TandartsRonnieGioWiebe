@@ -55,13 +55,27 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users can logout and land on the registration page', function () {
+test('logging out goes back to the homepage', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));
 
     $this->assertGuest();
-    $response->assertRedirect(route('register'));
+    $response->assertRedirect(route('home'));
+    $this->get(route('home'))->assertOk()->assertInertia(fn ($page) => $page->component('welcome'));
+});
+
+test('after logging out and in again everyone lands on their own dashboard', function () {
+    $admin = User::factory()->admin()->create();
+    $customer = User::factory()->create();
+
+    foreach ([[$admin, route('admin.dashboard')], [$customer, route('dashboard')]] as [$user, $home]) {
+        $this->actingAs($user)->post(route('logout'));
+        $this->get(route('dashboard')); // remembers /dashboard as the page to go back to
+
+        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+            ->assertRedirect($home);
+    }
 });
 
 test('users are rate limited', function () {

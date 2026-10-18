@@ -86,9 +86,12 @@ test('a treatment needs a name, a price and a duration', function () {
         ->assertSessionHasErrors(['name', 'price', 'duration']);
 });
 
-test('only admins can manage treatments here', function () {
+test('other staff can manage treatments too, customers cannot', function () {
     $dentist = User::factory()->role(Role::DENTIST)->create();
 
-    $this->actingAs($dentist)->get(route('admin.treatments.edit', $this->treatment))->assertForbidden();
-    $this->actingAs($dentist)->put(route('admin.treatments.update', $this->treatment), [])->assertForbidden();
+    $this->actingAs($dentist)->get(route('admin.treatments.edit', $this->treatment))->assertOk();
+
+    $customer = User::factory()->create();
+    $this->actingAs($customer)->get(route('admin.treatments.edit', $this->treatment))->assertForbidden();
+    $this->actingAs($customer)->put(route('admin.treatments.update', $this->treatment), [])->assertForbidden();
 });

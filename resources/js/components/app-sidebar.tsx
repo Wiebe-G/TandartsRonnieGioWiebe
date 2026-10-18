@@ -64,7 +64,8 @@ export function AppSidebar() {
 					},
 				]
 			: []),
-		...(auth.isAdmin
+		// All staff (admins included) share the same appointment and treatment pages
+		...(!auth.isCustomer
 			? [
 					{
 						title: 'Afspraken',
@@ -75,21 +76,6 @@ export function AppSidebar() {
 						title: 'Behandelingen',
 						href: admin.treatments.index(),
 						icon: ClipboardList,
-					},
-				]
-			: []),
-		// Other staff: the regular appointment and treatment pages
-		...(!auth.isCustomer && !auth.isAdmin
-			? [
-					{
-						title: 'Afspraken',
-						href: '/appointments',
-						icon: LayoutGrid,
-					},
-					{
-						title: 'Behandelingen',
-						href: '/treatments',
-						icon: LayoutGrid,
 					},
 				]
 			: []),

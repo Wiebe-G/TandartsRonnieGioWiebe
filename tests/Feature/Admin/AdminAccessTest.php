@@ -43,12 +43,32 @@ test('other users still land on the normal dashboard after logging in', function
         ->assertRedirect(route('dashboard'));
 });
 
-test('the admin pages for appointments and treatments are for admins only', function () {
+test('all staff share the appointment and treatment pages, customers do not', function (string $role) {
+    $employee = User::factory()->role($role)->create();
+
+    $this->actingAs($employee)->get(route('admin.appointments.index'))->assertOk();
+    $this->actingAs($employee)->get(route('admin.appointments.create'))->assertOk();
+    $this->actingAs($employee)->get(route('admin.treatments.index'))->assertOk();
+
+    $customer = User::factory()->create();
+    $this->actingAs($customer)->get(route('admin.appointments.index'))->assertForbidden();
+    $this->actingAs($customer)->get(route('admin.treatments.index'))->assertForbidden();
+})->with([Role::DENTIST, Role::ASSISTANT, Role::ADMIN]);
+
+test('the rest of the admin pages stay admin only', function () {
     $dentist = User::factory()->role(Role::DENTIST)->create();
 
-    $this->actingAs($dentist)->get(route('admin.appointments.index'))->assertForbidden();
-    $this->actingAs($dentist)->get(route('admin.appointments.create'))->assertForbidden();
-    $this->actingAs($dentist)->get(route('admin.treatments.index'))->assertForbidden();
+    $this->actingAs($dentist)->get(route('admin.dashboard'))->assertForbidden();
+    $this->actingAs($dentist)->get(route('admin.calendar.index'))->assertForbidden();
+});
+
+test('staff who were sent to the appointment pages land there after logging in', function () {
+    $dentist = User::factory()->role(Role::DENTIST)->create();
+
+    $this->get(route('admin.appointments.index'))->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), ['email' => $dentist->email, 'password' => 'password'])
+        ->assertRedirect(route('admin.appointments.index'));
 });
 
 test('a remembered admin page is skipped when a non-admin logs in', function () {
