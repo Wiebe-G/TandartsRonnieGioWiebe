@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AppointmentEditOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -76,10 +77,18 @@ class CustomerController extends Controller
             'customer' => $customer->load('employee'),
             'appointments' => Appointment::query()
                 ->where('customer_id', $customer->id)
-                ->with(['dentist', 'treatments'])
+                ->with([
+                    'customer:id,firstname,lastname',
+                    'dentist:id,firstname,lastname',
+                    'assistant:id,firstname,lastname',
+                    'room',
+                    'treatments:treatment_id,name',
+                ])
                 ->orderByDesc('date')
                 ->orderByDesc('starttime')
                 ->get(),
+            // For the edit dialog on each appointment
+            'options' => AppointmentEditOptions::toArray(),
         ]);
     }
 
@@ -143,7 +152,7 @@ class CustomerController extends Controller
             'phonenumber' => ['nullable', 'string', 'max:20'],
             'birthday' => ['nullable', 'date', 'before:today'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
-            'employee_id' => ['nullable', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
+            'employee_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
             // A new customer needs a password; when editing, leaving it empty keeps the current one.
             'password' => [$customer ? 'nullable' : 'required', 'string', Password::default()],
         ]);

@@ -10,7 +10,7 @@ interface Props extends PageProps {
 }
 
 export default function Show({}) {
-	const {Appointment} = usePage<Props>().props;
+	const {Appointment, errors} = usePage<Props>().props;
 
 	const [editMode, setEditMode] = useState<boolean>(false);
 	// const [values, setValues] = useState([
@@ -20,7 +20,7 @@ export default function Show({}) {
 	// 	{ id: 'Starttime', value: Appointment.starttime.toString() },
 	// 	{ id: 'Endtime', value: Appointment.endtime.toString() },
 	// ]);
-	const [note, setNote] = useState<string>(Appointment.note);
+	const [note, setNote] = useState<string>(Appointment.note ?? "");
 	const [date, setDate] = useState(Appointment.date.toString());
 	const [starttime, setStarttime] = useState(Appointment.starttime.toString());
 
@@ -75,12 +75,16 @@ export default function Show({}) {
 			<Head title="Zie afspraak in"/>
 
 			<form className="flex flex-col place-items-center border-2 border-indigo-500 h-full py-4 w-full gap-y-8">
+				{/* Foutmeldingen van de server, anders lijkt het alsof er niets gebeurt */}
+				{Object.values(errors).map((message) => (
+					<span key={message} className="text-red-600">{message}</span>
+				))}
 				<div className="flex gap-x-8">
 					<span>Klant: {Appointment.customer.firstname} {Appointment.customer.lastname}</span>
 					<span>Tandarts: {Appointment.dentist.firstname} {Appointment.dentist.lastname}</span>
-					<span>Assistent: {Appointment.assistant.firstname} {Appointment.assistant.lastname}</span>
+					<span>Assistent: {Appointment.assistant ? `${Appointment.assistant.firstname} ${Appointment.assistant.lastname}` : "Geen assistent"}</span>
 				</div>
-				<div>Soort behandeling: {Appointment.treatments[0].name}</div>
+				<div>Soort behandeling: {Appointment.treatments[0]?.name ?? "Onbekende behandeling"}</div>
 				<label htmlFor="note">Notitie: </label>
 				<textarea className="w-4/5 flex justify-center text-center h-full" readOnly={!editMode}
 				          defaultValue={note}
@@ -94,6 +98,7 @@ export default function Show({}) {
 
 					<label htmlFor="starttime">Begintijd: </label>
 					<input type="time" defaultValue={starttime} readOnly={!editMode}
+					       min="09:00" max="17:00" step={1800}
 					       onChange={(e) => setStarttime(e.target.value)}/>
 
 					<label htmlFor="endtime">Eindtijd: </label>
@@ -106,6 +111,7 @@ export default function Show({}) {
 					</button>
 					<button type={"submit"}
 					        className="btn btn-primary"
+					        disabled={!editMode}
 					        onClick={(e) => handleUpdateAppointment(e)}>
 						Sla bewerkingen op
 					</button>

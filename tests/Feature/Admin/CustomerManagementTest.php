@@ -2,6 +2,7 @@
 
 use App\Models\Appointment;
 use App\Models\Role;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -91,6 +92,7 @@ test('admins can update a customer and keep the password when it is left empty',
             'lastname' => $customer->lastname,
             'email' => $customer->email,
             'status' => 'inactive',
+            'employee_id' => User::factory()->role(Role::DENTIST)->create()->id,
             'password' => '',
         ])
         ->assertSessionHasNoErrors()
@@ -127,4 +129,44 @@ test('a customer with appointments cannot be deleted', function () {
     $this->actingAs($this->admin)->delete(route('admin.customers.destroy', $customer));
 
     expect(User::query()->find($customer->id))->not->toBeNull();
+});
+
+test('admins can edit a customer appointment from the customer page', function () {
+    $customer = User::factory()->create();
+    $dentist = User::factory()->role(Role::DENTIST)->create();
+    $appointment = Appointment::create([
+        'customer_id' => $customer->id,
+        'dentist_id' => $dentist->id,
+        'date' => '2026-10-21',
+        'starttime' => '09:00:00',
+        'endtime' => '09:30:00',
+        'status' => 'scheduled',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.customers.show', $customer))
+        ->assertInertia(fn ($page) => $page
+            ->has('appointments', 1)
+            ->where('appointments.0.dentist_id', $dentist->id)
+            ->has('options.dentists', 1)
+            ->has('options.statuses', 4));
+
+    $this->actingAs($this->admin)
+        ->from(route('admin.customers.show', $customer))
+        ->put(route('admin.calendar.update', $appointment), [
+            'date' => '2026-10-22',
+            'starttime' => '10:00',
+            'endtime' => '11:00',
+            'dentist_id' => $dentist->id,
+            'assistant_id' => User::factory()->role(Role::ASSISTANT)->create()->id,
+            'room_id' => Room::create(['name' => 'Kamer 1'])->room_id,
+            'status' => 'completed',
+            'note' => 'Verzet op verzoek van klant',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.customers.show', $customer));
+
+    $appointment->refresh();
+    expect($appointment->starttime)->toBe('10:00:00')
+        ->and($appointment->status)->toBe('completed');
 });

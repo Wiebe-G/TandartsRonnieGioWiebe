@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
 use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\RouteController;
@@ -36,14 +39,24 @@ Route::middleware(['auth', 'Employee'])->group(function () {
         ->name('treatments.create');
     Route::post('/treatments/create', [TreatmentController::class, 'store'])
         ->name('treatments.store');
+    Route::get('/treatments/{treatment}/edit', [TreatmentController::class, 'edit'])
+        ->name('treatments.edit');
+    Route::put('/treatments/{treatment}', [TreatmentController::class, 'update'])
+        ->name('treatments.update');
 });
 
 Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
     Route::get('/users', UserManagementController::class)->name('users');
     Route::resource('customers', CustomerController::class);
     Route::resource('employees', EmployeeController::class);
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+
+    // Admin versions of the appointment and treatment pages
+    Route::resource('appointments', AdminAppointmentController::class)->except('edit');
+    Route::put('/appointments/{appointment}/room', [AdminAppointmentController::class, 'updateRoom'])->name('appointments.room');
+    Route::resource('treatments', AdminTreatmentController::class)->except(['show', 'destroy']);
 });
 
 require __DIR__.'/settings.php';

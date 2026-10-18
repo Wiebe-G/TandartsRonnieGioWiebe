@@ -11,8 +11,6 @@ interface Props extends PageProps {
 export default function Treatments({}) {
 	const { Treatments } = usePage<Props>().props;
 
-	console.log(Treatments);
-
     return (
         <>
             <Head title="Behandelingen" />
@@ -26,8 +24,8 @@ export default function Treatments({}) {
 						<span className="text-center">Alle behandelingen:</span>
 						{Treatments.map((treatment: Treatment) => (
 							<div className="border-2 border-red-500 flex w-full px-2" key={treatment.treatment_id}>
-								<span>{treatment.name}</span>
-								<span className="ml-auto"><Edit /></span>
+								<span>{treatment.name}{!treatment.active && " (inactief)"}</span>
+								<Link href={`/treatments/${treatment.treatment_id}/edit`} className="ml-auto"><Edit /></Link>
 							</div>
 						))}
 					</div>
@@ -47,7 +45,7 @@ Treatments.layout = {
 	breadcrumbs: [
 		{
 			title: "Behandelingen",
-			link: "/treatments",
+			href: "/treatments",
 		}
 	]
 }

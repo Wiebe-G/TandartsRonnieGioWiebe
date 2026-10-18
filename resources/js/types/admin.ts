@@ -134,3 +134,18 @@ export type CalendarOptions = {
 	rooms: { room_id: number; name: string }[];
 	statuses: string[];
 };
+
+export type AdminTreatment = {
+	treatment_id: number;
+	name: string;
+	description: string | null;
+	price: string;
+	duration: number;
+	active: boolean;
+	appointments_count?: number;
+};
+
+export type CustomerOption = Pick<
+	ManagedUser,
+	'id' | 'firstname' | 'lastname' | 'name' | 'employee_id'
+>;

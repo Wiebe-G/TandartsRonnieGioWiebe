@@ -12,14 +12,20 @@ interface Props extends PageProps {
 export default function Appointments({}) {
 	const {Appointments} = usePage<Props>().props;
 
-	// filter naar appointments waar date == new Date()
+	// filter naar appointments waar date == new Date() (lokale datum, niet UTC)
 	let AppointmentsToday: Appointment[] = [];
 	const SetAppointmentsToday =
 		Appointments.map(app => {
-			if (app.date.toString() == new Date().toISOString().split("T")[0]) {
+			if (app.date.toString() == new Date().toLocaleDateString("sv-SE")) {
 				AppointmentsToday = [...AppointmentsToday, app]
 			}
 		})
+
+	// De laatste afgeronde afspraken, nieuwste eerst
+	const CompletedAppointments = Appointments
+		.filter(app => app.status == "completed")
+		.sort((a, b) => (b.date.toString() + b.starttime.toString()).localeCompare(a.date.toString() + a.starttime.toString()))
+		.slice(0, 5);
 
 	return (
 		<>
@@ -47,6 +53,14 @@ export default function Appointments({}) {
 					</div>
 					<div className="LayoutGrid">
 						<h1>Afgeronde afspraken</h1>
+						{CompletedAppointments.map(app => (
+							<Link href={`/appointments/view/${app.appointment_id}`}
+							      key={app.appointment_id}
+							      className="grid auto-cols-min md:grid-cols-2">
+								<span>{app.treatments[0]?.name ?? "Onbekende behandeling"}</span>
+								<span>{app.customer.firstname} {app.customer.lastname}</span>
+							</Link>
+						))}
 					</div>
 				</div>
 				<div
@@ -63,7 +77,7 @@ Appointments.layout = {
 	breadcrumbs: [
 		{
 			title: "Afspraken",
-			link: "/appointments",
+			href: "/appointments",
 		}
 	]
 }

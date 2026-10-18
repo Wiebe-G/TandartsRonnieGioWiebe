@@ -159,8 +159,11 @@ export default function UserForm({
 									id="employee_id"
 									name="employee_id"
 									defaultValue={user?.employee_id ?? ''}
+									required
 								>
-									<option value="">Geen tandarts</option>
+									<option value="" disabled>
+										Kies een tandarts
+									</option>
 									{dentists.map((dentist) => (
 										<option
 											key={dentist.id}
