@@ -15,11 +15,18 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TreatmentController;
 use App\Http\Controllers\TreatmentHistoryController;
+use App\Support\OpeningHours;
 use Illuminate\Support\Facades\Route;
 
 // Always the welcome page; nobody is logged in automatically.
 // To look around as a customer, an admin uses "Bekijk als klant" on the customer's page.
-Route::inertia('/', 'welcome')->name('home');
+Route::inertia('/', 'welcome', [
+    // Same hours the booking uses, so the homepage can't show different times
+    'openingHours' => [
+        'open' => substr(OpeningHours::OPEN, 0, 5),
+        'close' => substr(OpeningHours::CLOSE, 0, 5),
+    ],
+])->name('home');
 
 // Back to the admin after "Bekijk als klant" (checked in the controller)
 Route::post('bekijk-als-klant/stoppen', [ImpersonationController::class, 'stop'])
