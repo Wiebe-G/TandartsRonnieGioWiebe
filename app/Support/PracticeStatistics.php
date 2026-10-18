@@ -58,21 +58,19 @@ class PracticeStatistics
     }
 
     /**
-     * @return array{average: float|null, count: int, positivePercentage: int|null}
+     * Customers say per appointment whether they were satisfied.
+     *
+     * @return array{count: int, satisfied: int, percentage: int|null}
      */
     private function satisfaction(): array
     {
         $count = Feedback::query()->count();
-
-        if ($count === 0) {
-            return ['average' => null, 'count' => 0, 'positivePercentage' => null];
-        }
+        $satisfied = Feedback::query()->where('satisfied', true)->count();
 
         return [
-            'average' => round((float) Feedback::query()->avg('rating'), 1),
             'count' => $count,
-            // 4 or 5 stars counts as a satisfied customer
-            'positivePercentage' => (int) round(Feedback::query()->where('rating', '>=', 4)->count() / $count * 100),
+            'satisfied' => $satisfied,
+            'percentage' => $count > 0 ? (int) round($satisfied / $count * 100) : null,
         ];
     }
 
@@ -139,7 +137,7 @@ class PracticeStatistics
     }
 
     /**
-     * Average rating per dentist, best rated first.
+     * Share of satisfied customers per dentist, most satisfied first.
      *
      * @return Collection<int, array<string, mixed>>
      */
@@ -147,16 +145,18 @@ class PracticeStatistics
     {
         return User::query()
             ->where('role_id', Role::idFor(Role::DENTIST))
-            ->withCount('feedback')
-            ->withAvg('feedback', 'rating')
+            ->withCount([
+                'feedback',
+                'feedback as satisfied_count' => fn ($query) => $query->where('satisfied', true),
+            ])
             ->get()
             ->map(fn (User $dentist) => [
                 'id' => $dentist->id,
                 'name' => $dentist->name,
                 'count' => $dentist->feedback_count,
-                'average' => $dentist->feedback_avg_rating !== null ? round((float) $dentist->feedback_avg_rating, 1) : null,
+                'percentage' => $dentist->feedback_count > 0 ? (int) round($dentist->satisfied_count / $dentist->feedback_count * 100) : null,
             ])
-            ->sortByDesc(fn ($dentist) => [$dentist['average'] ?? -1, $dentist['count']])
+            ->sortByDesc(fn ($dentist) => [$dentist['percentage'] ?? -1, $dentist['count']])
             ->values();
     }
 

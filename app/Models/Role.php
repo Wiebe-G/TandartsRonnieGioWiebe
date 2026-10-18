@@ -44,4 +44,9 @@ class Role extends Model
     {
         return static::idFor(self::CUSTOMER);
     }
+
+    public static function dentistId(): int
+    {
+        return static::idFor(self::DENTIST);
+    }
 }

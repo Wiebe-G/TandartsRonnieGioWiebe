@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use App\Models\Appointment;
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -15,15 +17,16 @@ class AppointmentConflicts
     private Collection $overlapping;
 
     /**
-     * @param  string  $date  YYYY-MM-DD
+     * @param  DateTimeInterface|string  $date  a date, or YYYY-MM-DD
      * @param  string  $start  HH:MM:SS
      * @param  string  $end  HH:MM:SS
      */
-    public function __construct(string $date, string $start, string $end, ?Appointment $ignore = null)
+    public function __construct(DateTimeInterface|string $date, string $start, string $end, ?Appointment $ignore = null)
     {
         $this->overlapping = Appointment::query()
             ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->getKey()))
-            ->whereDate('date', $date)
+            // Always compare as YYYY-MM-DD; a date object would otherwise become "2026-10-21 00:00:00"
+            ->whereDate('date', CarbonImmutable::parse($date)->toDateString())
             ->where('starttime', '<', $end)
             ->where('endtime', '>', $start)
             ->where('status', '!=', 'cancelled')

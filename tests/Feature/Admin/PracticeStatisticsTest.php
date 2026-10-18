@@ -40,9 +40,27 @@ afterEach(fn () => Carbon::setTestNow());
 
 test('admins see the practice statistics on the dashboard', function () {
     $customer = User::factory()->create();
-    Feedback::create(['customer_id' => $customer->id, 'dentist_id' => $this->dentist->id, 'rating' => 5, 'comment' => 'Top']);
-    Feedback::create(['customer_id' => $customer->id, 'dentist_id' => $this->dentist->id, 'rating' => 4]);
-    Feedback::create(['customer_id' => $customer->id, 'dentist_id' => $this->otherDentist->id, 'rating' => 2]);
+    // Feedback belongs to an appointment that took place, here last week so today's numbers stay the same
+    $review = function (User $dentist, bool $satisfied, ?string $comment = null) use ($customer) {
+        $appointment = Appointment::create([
+            'customer_id' => $customer->id,
+            'dentist_id' => $dentist->id,
+            'date' => '2026-10-12',
+            'starttime' => '09:00:00',
+            'endtime' => '09:30:00',
+            'status' => 'completed',
+        ]);
+        Feedback::create([
+            'appointment_id' => $appointment->appointment_id,
+            'customer_id' => $customer->id,
+            'dentist_id' => $dentist->id,
+            'satisfied' => $satisfied,
+            'comment' => $comment,
+        ]);
+    };
+    $review($this->dentist, true, 'Top');
+    $review($this->dentist, true);
+    $review($this->otherDentist, false);
 
     $this->actingAs($this->admin)
         ->get(route('admin.dashboard'))
@@ -50,9 +68,9 @@ test('admins see the practice statistics on the dashboard', function () {
         ->assertInertia(fn ($page) => $page
             ->component('admin/dashboard')
             // satisfaction
-            ->where('statistics.satisfaction.average', 3.7)
             ->where('statistics.satisfaction.count', 3)
-            ->where('statistics.satisfaction.positivePercentage', 67)
+            ->where('statistics.satisfaction.satisfied', 2)
+            ->where('statistics.satisfaction.percentage', 67)
             // rooms in use right now
             ->where('statistics.rooms.total', 3)
             ->where('statistics.rooms.inUse', 1)
@@ -67,10 +85,10 @@ test('admins see the practice statistics on the dashboard', function () {
             ->where('statistics.employees.atWork', 3)
             ->where('statistics.employees.busyNow', 2)
             ->where('statistics.employees.total', 4)
-            // feedback per dentist, best rated first
+            // feedback per dentist, most satisfied first
             ->where('statistics.dentistFeedback.0.id', $this->dentist->id)
-            ->where('statistics.dentistFeedback.0.average', 4.5)
-            ->where('statistics.dentistFeedback.1.average', 2)
+            ->where('statistics.dentistFeedback.0.percentage', 100)
+            ->where('statistics.dentistFeedback.1.percentage', 0)
             ->has('statistics.latestFeedback', 3));
 });
 
@@ -78,9 +96,9 @@ test('satisfaction is empty when there is no feedback yet', function () {
     $this->actingAs($this->admin)
         ->get(route('admin.dashboard'))
         ->assertInertia(fn ($page) => $page
-            ->where('statistics.satisfaction.average', null)
+            ->where('statistics.satisfaction.percentage', null)
             ->where('statistics.satisfaction.count', 0)
-            ->where('statistics.dentistFeedback.0.average', null));
+            ->where('statistics.dentistFeedback.0.percentage', null));
 });
 
 test('other users cannot open the admin dashboard', function () {

@@ -21,6 +21,7 @@ export type User = {
 export type Auth = {
     user: User;
     isAdmin: boolean;
+    isCustomer: boolean;
 };
 
 export type TwoFactorSetupData = {

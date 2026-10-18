@@ -178,7 +178,7 @@ test('admins can reschedule an appointment and change its status', function () {
         ->assertRedirect(route('admin.appointments.show', $appointment));
 
     $appointment->refresh();
-    expect($appointment->date)->toStartWith('2026-10-22')
+    expect($appointment->date->toDateString())->toBe('2026-10-22')
         ->and($appointment->starttime)->toBe('13:00:00')
         ->and($appointment->endtime)->toBe('13:30:00')
         ->and($appointment->status)->toBe('completed')

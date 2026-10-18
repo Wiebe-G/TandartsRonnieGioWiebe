@@ -101,7 +101,7 @@ test('admins can update an appointment from the calendar', function () {
         ->assertRedirect();
 
     $appointment->refresh();
-    expect($appointment->date)->toStartWith('2026-10-22')
+    expect($appointment->date->toDateString())->toBe('2026-10-22')
         ->and($appointment->starttime)->toBe('14:00:00')
         ->and($appointment->endtime)->toBe('15:00:00')
         ->and($appointment->dentist_id)->toBe($this->otherDentist->id)

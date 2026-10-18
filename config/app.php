@@ -78,7 +78,13 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'nl'),
+
+    /*
+    | Local preview: when true (and APP_ENV=local), opening "/" logs you in as the
+    | first demo customer. Off by default so the welcome page and login work normally.
+    */
+    'demo_login' => (bool) env('DEMO_LOGIN', false),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

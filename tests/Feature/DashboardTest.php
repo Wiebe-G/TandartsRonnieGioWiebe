@@ -2,8 +2,10 @@
 
 use App\Models\Appointment;
 use App\Models\Role;
+use App\Models\Treatment;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
     $response = $this->get(route('dashboard'));
@@ -20,7 +22,42 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
-test('the dashboard only gets your own upcoming appointments, in order', function () {
+test('customers see their own start screen with their appointments', function () {
+    $dentist = User::factory()->dentist()->create();
+    $customer = User::factory()->create(['employee_id' => $dentist->id]);
+
+    $upcoming = Appointment::factory()
+        ->for($customer, 'customer')
+        ->for($dentist, 'dentist')
+        ->create();
+    $upcoming->treatments()->attach(Treatment::factory()->create(['name' => 'Controle']));
+
+    Appointment::factory()->completed()->for($customer, 'customer')->for($dentist, 'dentist')->create();
+
+    // Another customer's appointment must never show up.
+    Appointment::factory()->create();
+
+    $this->actingAs($customer)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('customer/dashboard')
+            ->where('dentist.name', $dentist->name)
+            ->has('upcoming', 1)
+            ->where('upcoming.0.id', $upcoming->appointment_id)
+            ->where('upcoming.0.treatments', ['Controle'])
+            ->has('recent', 1)
+        );
+});
+
+test('employees keep the regular dashboard', function () {
+    $dentist = User::factory()->dentist()->create();
+
+    $this->actingAs($dentist)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page->component('dashboard'));
+});
+
+test('staff only get their own upcoming appointments on the dashboard, in order', function () {
     Carbon::setTestNow('2026-10-21 10:15:00');
 
     $dentist = User::factory()->role(Role::DENTIST)->create();
@@ -40,7 +77,7 @@ test('the dashboard only gets your own upcoming appointments, in order', functio
     // Someone else's appointment
     $make(['customer_id' => User::factory()->create()->id, 'dentist_id' => User::factory()->role(Role::DENTIST)->create()->id, 'starttime' => '10:30:00', 'endtime' => '11:00:00']);
 
-    foreach ([$customer, $dentist] as $user) {
+    foreach ([$dentist] as $user) {
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertInertia(fn ($page) => $page

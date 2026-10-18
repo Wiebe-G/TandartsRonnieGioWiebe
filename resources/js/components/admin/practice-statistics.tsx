@@ -1,4 +1,11 @@
-import { DoorOpen, Smile, Star, Stethoscope, Users } from 'lucide-react';
+import {
+	DoorOpen,
+	Smile,
+	Stethoscope,
+	ThumbsDown,
+	ThumbsUp,
+	Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -45,20 +52,25 @@ function StatCard({
 	);
 }
 
-function Stars({ rating }: { rating: number }) {
+/** Share of satisfied customers as a bar: green part satisfied, the rest not. */
+function SatisfactionBar({ percentage }: { percentage: number }) {
 	return (
-		<span className="inline-flex" aria-label={`${rating} van 5 sterren`}>
-			{[1, 2, 3, 4, 5].map((star) => (
-				<Star
-					key={star}
-					className={cn(
-						'size-3.5',
-						star <= Math.round(rating)
-							? 'fill-amber-400 text-amber-400'
-							: 'text-muted-foreground/40',
-					)}
-				/>
-			))}
+		<span
+			className="bg-muted relative inline-block h-1.5 w-24 overflow-hidden rounded-full"
+			role="img"
+			aria-label={`${percentage}% tevreden`}
+		>
+			<span
+				className={cn(
+					'absolute inset-y-0 left-0 rounded-full',
+					percentage >= 75
+						? 'bg-emerald-500'
+						: percentage >= 50
+							? 'bg-amber-400'
+							: 'bg-red-500',
+				)}
+				style={{ width: `${percentage}%` }}
+			/>
 		</span>
 	);
 }
@@ -86,18 +98,18 @@ export default function PracticeStatistics({
 					title="Klanttevredenheid"
 					icon={Smile}
 					value={
-						satisfaction.average !== null
-							? `${satisfaction.average} / 5`
+						satisfaction.percentage !== null
+							? `${satisfaction.percentage}%`
 							: '-'
 					}
 					detail={
 						satisfaction.count > 0
-							? `${satisfaction.positivePercentage}% tevreden, ${satisfaction.count} beoordelingen`
+							? `tevreden, ${satisfaction.satisfied} van ${satisfaction.count} beoordelingen`
 							: 'Nog geen beoordelingen'
 					}
 				>
-					{satisfaction.average !== null && (
-						<Stars rating={satisfaction.average} />
+					{satisfaction.percentage !== null && (
+						<SatisfactionBar percentage={satisfaction.percentage} />
 					)}
 				</StatCard>
 
@@ -210,13 +222,13 @@ export default function PracticeStatistics({
 										<span className="truncate">
 											{dentist.name}
 										</span>
-										{dentist.average !== null ? (
+										{dentist.percentage !== null ? (
 											<span className="flex items-center gap-2">
-												<Stars
-													rating={dentist.average}
+												<SatisfactionBar
+													percentage={dentist.percentage}
 												/>
 												<span className="tabular-nums">
-													{dentist.average}
+													{dentist.percentage}%
 												</span>
 												<span className="text-muted-foreground">
 													({dentist.count})
@@ -251,7 +263,17 @@ export default function PracticeStatistics({
 										className="space-y-1 py-2"
 									>
 										<div className="flex flex-wrap items-center justify-between gap-2">
-											<Stars rating={feedback.rating} />
+											{feedback.satisfied ? (
+												<span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+													<ThumbsUp className="size-3.5" />
+													Tevreden
+												</span>
+											) : (
+												<span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+													<ThumbsDown className="size-3.5" />
+													Niet tevreden
+												</span>
+											)}
 											<span className="text-muted-foreground text-xs">
 												{feedback.customer?.name} over{' '}
 												{feedback.dentist?.name},{' '}

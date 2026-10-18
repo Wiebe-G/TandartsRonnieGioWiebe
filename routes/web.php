@@ -8,24 +8,49 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\TreatmentController;
+use App\Http\Controllers\TreatmentHistoryController;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+if (app()->environment('local') && config('app.demo_login')) {
+    // Local preview only (DEMO_LOGIN=true in .env): open the customer dashboard as the seeded demo customer without logging in.
+    Route::get('/', function () {
+        Auth::login(User::where('role_id', Role::customerId())->orderBy('id')->firstOrFail());
+
+        return redirect()->route('dashboard');
+    })->name('home');
+} else {
+    Route::inertia('/', 'welcome')->name('home');
+}
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [RouteController::class, 'dashboard'])
-        ->name('dashboard');
+    // Customers get their own start screen, everyone else the regular dashboard
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // Customers book, view and cancel their appointments here
+    Route::get('afspraken', [BookingController::class, 'index'])->name('appointments.index');
+    Route::get('afspraken/nieuw', [BookingController::class, 'create'])->name('appointments.create');
+    Route::post('afspraken', [BookingController::class, 'store'])->name('appointments.store');
+    Route::patch('afspraken/{appointment}/annuleren', [BookingController::class, 'cancel'])->name('appointments.cancel');
+    Route::post('afspraken/{appointment}/feedback', [FeedbackController::class, 'store'])->name('appointments.feedback');
+
+    Route::get('behandelingen', TreatmentHistoryController::class)->name('treatments.history');
 });
 
 Route::middleware(['auth', 'Employee'])->group(function () {
     Route::get('/appointments', [RouteController::class, 'appointments'])
         ->name('appointments');
     Route::get('/appointments/create', [AppointmentController::class, 'create'])
-        ->name('appointments.create');
+        ->name('appointments.staff.create');
     Route::post('/appointments/create', [AppointmentController::class, 'store'])
-        ->name('appointments.store');
+        ->name('appointments.staff.store');
     Route::get('/appointments/view/{appointment}', [AppointmentController::class, 'show'])
         ->name('appointments.view');
     Route::post('/appointments/update', [AppointmentController::class, 'update'])

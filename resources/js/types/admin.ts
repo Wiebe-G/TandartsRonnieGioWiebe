@@ -50,9 +50,9 @@ export type Paginated<T> = {
 
 export type PracticeStatistics = {
 	satisfaction: {
-		average: number | null;
 		count: number;
-		positivePercentage: number | null;
+		satisfied: number;
+		percentage: number | null;
 	};
 	rooms: {
 		total: number;
@@ -87,11 +87,11 @@ export type PracticeStatistics = {
 		id: number;
 		name: string;
 		count: number;
-		average: number | null;
+		percentage: number | null;
 	}[];
 	latestFeedback: {
 		feedback_id: number;
-		rating: number;
+		satisfied: boolean;
 		comment: string | null;
 		created_at: string;
 		customer?: Pick<ManagedUser, 'id' | 'name'>;

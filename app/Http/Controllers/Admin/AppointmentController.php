@@ -119,7 +119,7 @@ class AppointmentController extends Controller
             'rooms' => Room::query()->orderBy('name')->get(['room_id', 'name']),
             'statuses' => AppointmentEditOptions::STATUSES,
             // Taken times on the day the appointment is moved to
-            'busy' => $this->busyOn($request->string('date')->value() ?: $appointment->date),
+            'busy' => $this->busyOn($request->string('date')->value() ?: $appointment->date->toDateString()),
         ]);
     }
 

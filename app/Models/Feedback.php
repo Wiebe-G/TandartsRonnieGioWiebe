@@ -2,26 +2,50 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A customer's rating (1 to 5) of a dentist, optionally for one appointment.
+ * A customer's review of an appointment that took place.
  *
  * @property int $feedback_id
+ * @property int $appointment_id
  * @property int $customer_id
- * @property int $dentist_id
- * @property int|null $appointment_id
- * @property int $rating
+ * @property int|null $dentist_id
+ * @property bool $satisfied
  * @property string|null $comment
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ * @property-read Appointment $appointment
+ * @property-read User $customer
+ * @property-read User|null $dentist
  */
-#[Table('feedback')]
-#[Fillable(['customer_id', 'dentist_id', 'appointment_id', 'rating', 'comment'])]
+#[Fillable(['appointment_id', 'customer_id', 'dentist_id', 'satisfied', 'comment'])]
 class Feedback extends Model
 {
+    protected $table = 'feedback';
+
     protected $primaryKey = 'feedback_id';
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'satisfied' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Appointment, $this>
+     */
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class, 'appointment_id');
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -32,6 +56,8 @@ class Feedback extends Model
     }
 
     /**
+     * The dentist the appointment was with, kept here for the practice statistics.
+     *
      * @return BelongsTo<User, $this>
      */
     public function dentist(): BelongsTo

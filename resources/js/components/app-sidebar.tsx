@@ -1,6 +1,18 @@
 import {Link, usePage} from '@inertiajs/react';
-import {PageProps} from '@inertiajs/core';
-import {BookOpen, CalendarClock, CalendarDays, ClipboardList, FolderGit2, LayoutGrid, Stethoscope, UserCog, Users} from 'lucide-react';
+import {
+    BookOpen,
+    CalendarClock,
+    CalendarDays,
+    CalendarPlus,
+    ClipboardList,
+    FolderGit2,
+    History,
+    LayoutGrid,
+    Stethoscope,
+    UserCog,
+    UserRound,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import {NavFooter} from '@/components/nav-footer';
 import {NavMain} from '@/components/nav-main';
@@ -16,12 +28,10 @@ import {
 } from '@/components/ui/sidebar';
 import {dashboard} from '@/routes';
 import admin from '@/routes/admin';
+import * as appointments from '@/routes/appointments';
+import {edit as editProfile} from '@/routes/profile';
+import {history} from '@/routes/treatments';
 import type {NavItem} from '@/types';
-import type {User} from '@/types/Interfaces';
-
-interface Props extends PageProps {
-    auth: User;
-}
 
 export function AppSidebar() {
     const {auth} = usePage().props;
@@ -34,6 +44,26 @@ export function AppSidebar() {
             href: dashboardUrl,
             icon: LayoutGrid,
         },
+        // Customers: their own agenda, booking and history
+        ...(auth.isCustomer
+            ? [
+                  {
+                      title: 'Agenda',
+                      href: appointments.index(),
+                      icon: CalendarDays,
+                  },
+                  {
+                      title: 'Afspraak maken',
+                      href: appointments.create(),
+                      icon: CalendarPlus,
+                  },
+                  {
+                      title: 'Behandelingsgeschiedenis',
+                      href: history(),
+                      icon: History,
+                  },
+              ]
+            : []),
         ...(auth.isAdmin
                 ? [
                     {
@@ -48,7 +78,8 @@ export function AppSidebar() {
                     }
                 ] : []
         ),
-        ...(auth.user.role_id != 1 && !auth.isAdmin
+        // Other staff: the regular appointment and treatment pages
+        ...(!auth.isCustomer && !auth.isAdmin
                 ? [
                     {
                         title: 'Afspraken',
@@ -85,7 +116,12 @@ export function AppSidebar() {
                         icon: CalendarDays
                     }
                 ] : []
-        )
+        ),
+        {
+            title: 'Mijn profiel',
+            href: editProfile(),
+            icon: UserRound,
+        },
     ];
 
     const footerNavItems: NavItem[] = [

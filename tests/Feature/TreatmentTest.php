@@ -66,7 +66,7 @@ test('inactive treatments are not offered for new appointments', function () {
     $this->treatment->update(['active' => false]);
 
     $this->actingAs($this->employee)
-        ->get(route('appointments.create'))
+        ->get(route('appointments.staff.create'))
         ->assertInertia(fn ($page) => $page->has('Treatments', 0));
 });
 
