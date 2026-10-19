@@ -140,6 +140,16 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+
+	/* Dropdown options: always black text on white, also in dark mode */
+	select option {
+		background-color: #fff;
+		color: #000;
+	}
+
+	select option:disabled {
+		color: #6b7280;
+	}
 }
 
 .LayoutGrid {
