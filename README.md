@@ -4,8 +4,8 @@ Tandarts website
 
 # Teamleden
 
-## Wiebe (Retarded Clanker GPT)
+## Wiebe
 
-## Ronnie (Grok)
+## Ronnie
 
-## Gio (Claude)
+## Gio
