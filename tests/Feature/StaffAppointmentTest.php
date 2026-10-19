@@ -103,7 +103,7 @@ test('an appointment without an assistant can be opened', function () {
 test('an appointment can be moved and keeps its status', function () {
     ($this->plan)();
     $appointment = Appointment::query()->sole();
-    $appointment->update(['status' => 'completed']);
+    $appointment->update(['status' => 'no_show']);
 
     $this->actingAs($this->assistant)
         ->post(route('appointments.update'), [
@@ -118,7 +118,7 @@ test('an appointment can be moved and keeps its status', function () {
     $appointment->refresh();
     expect($appointment->starttime)->toBe('13:00:00')
         ->and($appointment->endtime)->toBe('13:30:00')
-        ->and($appointment->status)->toBe('completed');
+        ->and($appointment->status)->toBe('no_show');
 });
 
 test('moving follows the planning rules', function () {

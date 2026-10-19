@@ -9,6 +9,7 @@ import {
 	FolderGit2,
 	History,
 	LayoutGrid,
+	MessageSquare,
 	Stethoscope,
 	UserCog,
 	UserRound,
@@ -30,6 +31,7 @@ import {
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import * as appointments from '@/routes/appointments';
+import { feedback as customerFeedback } from '@/routes/customer';
 import * as customerInvoices from '@/routes/customer/invoices';
 import { edit as editProfile } from '@/routes/profile';
 import { history } from '@/routes/treatments';
@@ -68,6 +70,11 @@ export function AppSidebar() {
 						title: 'Mijn facturen',
 						href: customerInvoices.index(),
 						icon: ReceiptText,
+					},
+					{
+						title: 'Mijn feedback',
+						href: customerFeedback(),
+						icon: MessageSquare,
 					},
 				]
 			: []),

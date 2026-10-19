@@ -128,6 +128,14 @@ class AppointmentController extends Controller
         ]);
         $Appointment = Appointment::query()->with('treatments')->find($validated['Appointment_Id']);
 
+        // Een afgeronde afspraak ligt vast: alleen de notitie mag nog veranderen
+        if ($Appointment->isLocked()) {
+            $Appointment->update(['note' => $validated['Note'] ?? '']);
+
+            return redirect()->route('appointments')
+                ->with('success', 'Notitie aangepast');
+        }
+
         $tijd = Carbon::parse($validated['Starttime']);
         $startTime = $tijd->toTimeString();
         $endTime = OpeningHours::endFor($startTime, (int) ($Appointment['treatments'][0]['duration'] ?? OpeningHours::SLOT_MINUTES));

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CustomerFeedbackController;
 use App\Http\Controllers\CustomerInvoiceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedbackController;
@@ -47,6 +48,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('afspraken/{appointment}/feedback', [FeedbackController::class, 'store'])->name('appointments.feedback');
 
     Route::get('behandelingen', TreatmentHistoryController::class)->name('treatments.history');
+
+    // The customer's own feedback
+    Route::get('mijn-feedback', CustomerFeedbackController::class)->name('customer.feedback');
 
     // The customer's own invoices (the ones that were sent to them)
     Route::get('facturen', [CustomerInvoiceController::class, 'index'])->name('customer.invoices.index');

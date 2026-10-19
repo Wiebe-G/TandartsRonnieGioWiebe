@@ -122,6 +122,16 @@ class Appointment extends Model
         return $this->hasOne(Invoice::class, 'appointment_id');
     }
 
+    public const LOCKED_MESSAGE = 'Deze afspraak is afgerond. Alleen de notitie kan nog aangepast worden.';
+
+    /**
+     * A completed appointment can no longer be changed, except for its note.
+     */
+    public function isLocked(): bool
+    {
+        return $this->status === self::COMPLETED;
+    }
+
     /**
      * Moment the appointment starts (date + start time).
      */
@@ -151,7 +161,9 @@ class Appointment extends Model
      */
     public function tookPlace(): bool
     {
-        return $this->status !== self::CANCELLED && $this->date->lt(today());
+        // Marked as completed counts straight away, also on the day itself
+        return $this->status === self::COMPLETED
+            || ($this->status !== self::CANCELLED && $this->date->lt(today()));
     }
 
     /**
@@ -162,6 +174,10 @@ class Appointment extends Model
     #[Scope]
     protected function past(Builder $query): void
     {
-        $query->where('status', '!=', self::CANCELLED)->whereDate('date', '<', today());
+        $query->where(fn (Builder $query) => $query
+            ->where('status', self::COMPLETED)
+            ->orWhere(fn (Builder $query) => $query
+                ->where('status', '!=', self::CANCELLED)
+                ->whereDate('date', '<', today())));
     }
 }

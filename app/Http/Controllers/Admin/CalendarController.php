@@ -54,6 +54,15 @@ class CalendarController extends Controller
      */
     public function update(Request $request, Appointment $appointment): RedirectResponse
     {
+        // A completed appointment is locked: only the note can still be changed
+        if ($appointment->isLocked()) {
+            $appointment->update(['note' => $request->validate(['note' => ['nullable', 'string', 'max:255']])['note'] ?? '']);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Notitie aangepast.']);
+
+            return back();
+        }
+
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'starttime' => ['required', 'date_format:H:i'],

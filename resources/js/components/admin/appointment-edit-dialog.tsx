@@ -45,6 +45,7 @@ export default function AppointmentEditDialog({
 	children,
 }: Props) {
 	const [open, setOpen] = useState(false);
+	const locked = appointment.status === 'completed';
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -65,151 +66,182 @@ export default function AppointmentEditDialog({
 				>
 					{({ processing, errors }) => (
 						<>
-							<div className="grid gap-4 sm:grid-cols-3">
-								<div className="grid gap-2">
-									<Label htmlFor="date">Datum</Label>
-									<Input
-										id="date"
-										type="date"
-										name="date"
-										defaultValue={appointment.date.slice(
-											0,
-											10,
-										)}
-										required
-									/>
-									<InputError message={errors.date} />
+							{locked && (
+								<p className="text-muted-foreground text-sm">
+									Deze afspraak is afgerond. Alleen de notitie
+									kan nog aangepast worden.
+								</p>
+							)}
+							{/* A completed appointment is locked: everything but the note is read-only */}
+							<fieldset
+								disabled={locked}
+								className="space-y-4 disabled:opacity-60"
+							>
+								<div className="grid gap-4 sm:grid-cols-3">
+									<div className="grid gap-2">
+										<Label htmlFor="date">Datum</Label>
+										<Input
+											id="date"
+											type="date"
+											name="date"
+											defaultValue={appointment.date.slice(
+												0,
+												10,
+											)}
+											required
+										/>
+										<InputError message={errors.date} />
+									</div>
+									<div className="grid gap-2">
+										<Label htmlFor="starttime">
+											Begintijd
+										</Label>
+										<Input
+											id="starttime"
+											type="time"
+											name="starttime"
+											min="09:00"
+											max="17:00"
+											step={1800}
+											defaultValue={appointment.starttime.slice(
+												0,
+												5,
+											)}
+											required
+										/>
+									</div>
+									<div className="grid gap-2">
+										<Label htmlFor="endtime">
+											Eindtijd
+										</Label>
+										<Input
+											id="endtime"
+											type="time"
+											name="endtime"
+											min="09:00"
+											max="17:00"
+											step={1800}
+											defaultValue={appointment.endtime.slice(
+												0,
+												5,
+											)}
+											required
+										/>
+									</div>
 								</div>
-								<div className="grid gap-2">
-									<Label htmlFor="starttime">Begintijd</Label>
-									<Input
-										id="starttime"
-										type="time"
-										name="starttime"
-										min="09:00"
-										max="17:00"
-										step={1800}
-										defaultValue={appointment.starttime.slice(
-											0,
-											5,
-										)}
-										required
-									/>
-								</div>
-								<div className="grid gap-2">
-									<Label htmlFor="endtime">Eindtijd</Label>
-									<Input
-										id="endtime"
-										type="time"
-										name="endtime"
-										min="09:00"
-										max="17:00"
-										step={1800}
-										defaultValue={appointment.endtime.slice(
-											0,
-											5,
-										)}
-										required
-									/>
-								</div>
-							</div>
-							<InputError
-								message={errors.starttime ?? errors.endtime}
-							/>
+								<InputError
+									message={errors.starttime ?? errors.endtime}
+								/>
 
-							<div className="grid gap-4 sm:grid-cols-2">
-								<div className="grid gap-2">
-									<Label htmlFor="dentist_id">Tandarts</Label>
-									<NativeSelect
-										id="dentist_id"
-										name="dentist_id"
-										defaultValue={appointment.dentist_id}
-										required
-									>
-										{options.dentists.map((dentist) => (
-											<option
-												key={dentist.id}
-												value={dentist.id}
-											>
-												{dentist.name}
-											</option>
-										))}
-									</NativeSelect>
-									<InputError message={errors.dentist_id} />
-								</div>
+								<div className="grid gap-4 sm:grid-cols-2">
+									<div className="grid gap-2">
+										<Label htmlFor="dentist_id">
+											Tandarts
+										</Label>
+										<NativeSelect
+											id="dentist_id"
+											name="dentist_id"
+											defaultValue={
+												appointment.dentist_id
+											}
+											required
+										>
+											{options.dentists.map((dentist) => (
+												<option
+													key={dentist.id}
+													value={dentist.id}
+												>
+													{dentist.name}
+												</option>
+											))}
+										</NativeSelect>
+										<InputError
+											message={errors.dentist_id}
+										/>
+									</div>
 
-								<div className="grid gap-2">
-									<Label htmlFor="assistant_id">
-										Assistent
-									</Label>
-									<NativeSelect
-										id="assistant_id"
-										name="assistant_id"
-										defaultValue={
-											appointment.assistant_id ?? ''
-										}
-										required
-									>
-										<option value="" disabled>
-											Kies een assistent
-										</option>
-										{options.assistants.map((employee) => (
-											<option
-												key={employee.id}
-												value={employee.id}
-											>
-												{employee.name}
+									<div className="grid gap-2">
+										<Label htmlFor="assistant_id">
+											Assistent
+										</Label>
+										<NativeSelect
+											id="assistant_id"
+											name="assistant_id"
+											defaultValue={
+												appointment.assistant_id ?? ''
+											}
+											required
+										>
+											<option value="" disabled>
+												Kies een assistent
 											</option>
-										))}
-									</NativeSelect>
-									<InputError message={errors.assistant_id} />
-								</div>
+											{options.assistants.map(
+												(employee) => (
+													<option
+														key={employee.id}
+														value={employee.id}
+													>
+														{employee.name}
+													</option>
+												),
+											)}
+										</NativeSelect>
+										<InputError
+											message={errors.assistant_id}
+										/>
+									</div>
 
-								<div className="grid gap-2">
-									<Label htmlFor="room_id">Kamer</Label>
-									<NativeSelect
-										id="room_id"
-										name="room_id"
-										defaultValue={appointment.room_id ?? ''}
-										required
-									>
-										<option value="" disabled>
-											Kies een kamer
-										</option>
-										{options.rooms.map((room) => (
-											<option
-												key={room.room_id}
-												value={room.room_id}
-											>
-												{room.name}
+									<div className="grid gap-2">
+										<Label htmlFor="room_id">Kamer</Label>
+										<NativeSelect
+											id="room_id"
+											name="room_id"
+											defaultValue={
+												appointment.room_id ?? ''
+											}
+											required
+										>
+											<option value="" disabled>
+												Kies een kamer
 											</option>
-										))}
-									</NativeSelect>
-									<InputError message={errors.room_id} />
-								</div>
+											{options.rooms.map((room) => (
+												<option
+													key={room.room_id}
+													value={room.room_id}
+												>
+													{room.name}
+												</option>
+											))}
+										</NativeSelect>
+										<InputError message={errors.room_id} />
+									</div>
 
-								<div className="grid gap-2">
-									<Label htmlFor="status">Status</Label>
-									<NativeSelect
-										id="status"
-										name="status"
-										defaultValue={
-											options.statuses.includes(
-												appointment.status,
-											)
-												? appointment.status
-												: 'scheduled'
-										}
-									>
-										{options.statuses.map((status) => (
-											<option key={status} value={status}>
-												{statusLabel(status)}
-											</option>
-										))}
-									</NativeSelect>
-									<InputError message={errors.status} />
+									<div className="grid gap-2">
+										<Label htmlFor="status">Status</Label>
+										<NativeSelect
+											id="status"
+											name="status"
+											defaultValue={
+												options.statuses.includes(
+													appointment.status,
+												)
+													? appointment.status
+													: 'scheduled'
+											}
+										>
+											{options.statuses.map((status) => (
+												<option
+													key={status}
+													value={status}
+												>
+													{statusLabel(status)}
+												</option>
+											))}
+										</NativeSelect>
+										<InputError message={errors.status} />
+									</div>
 								</div>
-							</div>
+							</fieldset>
 
 							<div className="grid gap-2">
 								<Label htmlFor="note">Notitie</Label>

@@ -129,6 +129,15 @@ class AppointmentController extends Controller
      */
     public function update(Request $request, Appointment $appointment): RedirectResponse
     {
+        // A completed appointment is locked: only the note can still be changed
+        if ($appointment->isLocked()) {
+            $appointment->update(['note' => $request->validate(['note' => ['nullable', 'string', 'max:255']])['note'] ?? '']);
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => 'Notitie aangepast.']);
+
+            return to_route('admin.appointments.show', $appointment);
+        }
+
         $validated = $request->validate([
             'date' => ['required', 'date_format:Y-m-d'],
             'starttime' => ['required', 'date_format:H:i'],
@@ -202,6 +211,10 @@ class AppointmentController extends Controller
 
     public function updateRoom(Request $request, Appointment $appointment): RedirectResponse
     {
+        if ($appointment->isLocked()) {
+            throw ValidationException::withMessages(['room_id' => Appointment::LOCKED_MESSAGE]);
+        }
+
         $validated = $request->validate([
             'room_id' => ['required', Rule::exists(Room::class, 'room_id')],
         ], ['room_id.required' => 'Kies een kamer.']);

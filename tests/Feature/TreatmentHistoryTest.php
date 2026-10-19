@@ -92,3 +92,41 @@ test('feedback is not possible on upcoming or someone else\'s appointments', fun
 
     expect(Feedback::count())->toBe(0);
 });
+
+test('customers see only their own feedback, and what they can still review', function () {
+    $dentist = User::factory()->dentist()->create();
+    $customer = User::factory()->create(['employee_id' => $dentist->id]);
+    $other = User::factory()->create();
+
+    $reviewed = Appointment::factory()->completed()->for($customer, 'customer')->for($dentist, 'dentist')->create();
+    $toReview = Appointment::factory()->completed()->for($customer, 'customer')->for($dentist, 'dentist')->create();
+    // Completed today counts too
+    $today = Appointment::factory()->for($customer, 'customer')->for($dentist, 'dentist')->create(['date' => today()->toDateString(), 'status' => 'completed']);
+    // Not taken place yet: nothing to review
+    Appointment::factory()->for($customer, 'customer')->for($dentist, 'dentist')->create();
+    $othersAppointment = Appointment::factory()->completed()->for($other, 'customer')->for($dentist, 'dentist')->create();
+
+    $this->actingAs($customer)->post(route('appointments.feedback', $reviewed), ['satisfied' => true, 'comment' => 'Prima'])->assertSessionHasNoErrors();
+    $this->actingAs($other)->post(route('appointments.feedback', $othersAppointment), ['satisfied' => false])->assertSessionHasNoErrors();
+
+    $this->actingAs($customer)
+        ->get(route('customer.feedback'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('customer/feedback/index')
+            ->has('feedback', 1)
+            ->where('feedback.0.comment', 'Prima')
+            ->where('feedback.0.appointment.id', $reviewed->appointment_id)
+            ->has('toReview', 2)
+            ->where('toReview', fn ($items) => collect($items)->pluck('id')->sort()->values()->all() === collect([$toReview->appointment_id, $today->appointment_id])->sort()->values()->all())
+        );
+
+    // Feedback on someone else's appointment is refused
+    $this->actingAs($customer)->post(route('appointments.feedback', $othersAppointment), ['satisfied' => true])->assertForbidden();
+});
+
+test('employees cannot open the customer feedback page', function () {
+    $this->actingAs(User::factory()->dentist()->create())
+        ->get(route('customer.feedback'))
+        ->assertForbidden();
+});

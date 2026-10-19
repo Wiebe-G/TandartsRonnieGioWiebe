@@ -319,3 +319,50 @@ test('dentists and assistants can complete appointments too', function () {
 
     expect($appointment->refresh()->status)->toBe('completed');
 });
+
+test('a completed appointment can only get a new note', function () {
+    ($this->plan)();
+    $appointment = Appointment::query()->sole();
+    $appointment->update(['status' => 'completed']);
+    $room = Room::create(['name' => 'Kamer 9']);
+
+    // Shared page: date, time and status are ignored, the note is saved
+    $this->actingAs($this->admin)
+        ->put(route('admin.appointments.update', $appointment), [
+            'date' => '2026-10-22', 'starttime' => '13:00', 'status' => 'scheduled', 'note' => 'Nabehandeling nodig',
+        ])
+        ->assertSessionHasNoErrors();
+    $appointment->refresh();
+    expect($appointment->note)->toBe('Nabehandeling nodig')
+        ->and($appointment->date->toDateString())->toBe('2026-10-21')
+        ->and($appointment->starttime)->toBe('09:00:00')
+        ->and($appointment->status)->toBe('completed');
+
+    // Room cannot change
+    $this->actingAs($this->admin)
+        ->put(route('admin.appointments.room', $appointment), ['room_id' => $room->room_id])
+        ->assertSessionHasErrors('room_id');
+    expect($appointment->refresh()->room_id)->toBe($this->room->room_id);
+
+    // Calendar dialog: same
+    $this->actingAs($this->admin)
+        ->put(route('admin.calendar.update', $appointment), [
+            'date' => '2026-10-23', 'starttime' => '14:00', 'endtime' => '14:30', 'dentist_id' => $this->dentist->id,
+            'assistant_id' => $this->assistant->id, 'room_id' => $room->room_id, 'status' => 'cancelled', 'note' => 'Via de agenda',
+        ])
+        ->assertSessionHasNoErrors();
+    $appointment->refresh();
+    expect($appointment->note)->toBe('Via de agenda')
+        ->and($appointment->status)->toBe('completed')
+        ->and($appointment->date->toDateString())->toBe('2026-10-21');
+
+    // Wiebe's page: same
+    $this->actingAs($this->admin)
+        ->post(route('appointments.update'), [
+            'Appointment_Id' => $appointment->appointment_id, 'Note' => 'Via de oude pagina', 'Date' => '2026-10-24', 'Starttime' => '15:00',
+        ])
+        ->assertSessionHasNoErrors();
+    $appointment->refresh();
+    expect($appointment->note)->toBe('Via de oude pagina')
+        ->and($appointment->starttime)->toBe('09:00:00');
+});

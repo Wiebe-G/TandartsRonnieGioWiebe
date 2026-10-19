@@ -113,10 +113,13 @@ export default function ShowAppointment({
 		setNote(appointment.note ?? '');
 	};
 
+	// A completed appointment is locked: only the note can still be changed
+	const locked = appointment.status === 'completed';
+
 	const save = () => {
 		router.put(
 			admin.appointments.update.url(appointment.appointment_id),
-			{ date, starttime, status, note },
+			locked ? { note } : { date, starttime, status, note },
 			{
 				preserveScroll: true,
 				onStart: () => setSaving(true),
@@ -204,7 +207,7 @@ export default function ShowAppointment({
 								onClick={() => setEditMode(true)}
 							>
 								<CalendarClock />
-								Bewerken
+								{locked ? 'Notitie bewerken' : 'Bewerken'}
 							</Button>
 						)}
 						<Dialog>
@@ -268,52 +271,68 @@ export default function ShowAppointment({
 								))}
 							</dl>
 
-							<div className="grid gap-2">
-								<Label htmlFor="room">Kamer</Label>
-								<div className="flex gap-2">
-									<select
-										id="room"
-										value={roomId}
-										onChange={(event) =>
-											setRoomId(event.target.value)
-										}
-										className={selectClass}
-									>
-										<option value="" disabled>
-											Kies een kamer
-										</option>
-										{rooms.map((room) => (
-											<option
-												key={room.room_id}
-												value={room.room_id}
-											>
-												{room.name}
+							{locked ? (
+								<dl className="grid grid-cols-[auto_1fr] gap-x-4 text-sm">
+									<dt className="text-muted-foreground">
+										Kamer
+									</dt>
+									<dd>
+										{appointment.room?.name ?? 'Geen kamer'}
+									</dd>
+								</dl>
+							) : (
+								<div className="grid gap-2">
+									<Label htmlFor="room">Kamer</Label>
+									<div className="flex gap-2">
+										<select
+											id="room"
+											value={roomId}
+											onChange={(event) =>
+												setRoomId(event.target.value)
+											}
+											className={selectClass}
+										>
+											<option value="" disabled>
+												Kies een kamer
 											</option>
-										))}
-									</select>
-									<Button
-										variant="outline"
-										onClick={saveRoom}
-										disabled={
-											!roomId ||
-											roomId ===
-												String(
-													appointment.room_id ?? '',
-												)
-										}
-									>
-										Opslaan
-									</Button>
+											{rooms.map((room) => (
+												<option
+													key={room.room_id}
+													value={room.room_id}
+												>
+													{room.name}
+												</option>
+											))}
+										</select>
+										<Button
+											variant="outline"
+											onClick={saveRoom}
+											disabled={
+												!roomId ||
+												roomId ===
+													String(
+														appointment.room_id ??
+															'',
+													)
+											}
+										>
+											Opslaan
+										</Button>
+									</div>
+									<InputError message={errors.room_id} />
 								</div>
-								<InputError message={errors.room_id} />
-							</div>
+							)}
 						</CardContent>
 					</Card>
 
 					<Card className="h-fit">
 						<CardHeader>
 							<CardTitle>
-								{editMode ? 'Afspraak bewerken' : 'Notitie'}
+								{!editMode
+									? 'Notitie'
+									: locked
+										? 'Notitie bewerken'
+										: 'Afspraak bewerken'}
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
@@ -329,69 +348,93 @@ export default function ShowAppointment({
 								</p>
 							) : (
 								<>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<div className="grid gap-2">
-											<Label htmlFor="date">Datum</Label>
-											<Input
-												id="date"
-												type="date"
-												min={localDate()}
-												value={date}
-												onChange={(event) =>
-													changeDate(
-														event.target.value,
-													)
-												}
-											/>
-											<InputError message={errors.date} />
-										</div>
-										<div className="grid gap-2">
-											<Label htmlFor="status">
-												Status
-											</Label>
-											<select
-												id="status"
-												value={status}
-												onChange={(event) =>
-													setStatus(
-														event.target.value,
-													)
-												}
-												className={selectClass}
-											>
-												{statuses.map((option) => (
-													<option
-														key={option}
-														value={option}
-													>
-														{statusLabel(option)}
-													</option>
-												))}
-											</select>
-											<InputError
-												message={errors.status}
-											/>
-										</div>
-									</div>
-
-									{isWeekend(date) ? (
-										<p className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400">
-											Op zaterdag en zondag kunnen geen
-											afspraken worden gepland. Kies een
-											werkdag.
+									{locked && (
+										<p className="text-muted-foreground text-sm">
+											Deze afspraak is afgerond. Alleen de
+											notitie kan nog aangepast worden.
 										</p>
-									) : (
-										<div className="grid gap-2">
-											<Label>Begintijd</Label>
-											<SlotPicker
-												slots={slots}
-												value={starttime}
-												onChange={setStarttime}
-											/>
-											<InputError
-												message={errors.starttime}
-											/>
-										</div>
+									)}
+									{!locked && (
+										<>
+											<div className="grid gap-4 sm:grid-cols-2">
+												<div className="grid gap-2">
+													<Label htmlFor="date">
+														Datum
+													</Label>
+													<Input
+														id="date"
+														type="date"
+														min={localDate()}
+														value={date}
+														onChange={(event) =>
+															changeDate(
+																event.target
+																	.value,
+															)
+														}
+													/>
+													<InputError
+														message={errors.date}
+													/>
+												</div>
+												<div className="grid gap-2">
+													<Label htmlFor="status">
+														Status
+													</Label>
+													<select
+														id="status"
+														value={status}
+														onChange={(event) =>
+															setStatus(
+																event.target
+																	.value,
+															)
+														}
+														className={selectClass}
+													>
+														{statuses.map(
+															(option) => (
+																<option
+																	key={option}
+																	value={
+																		option
+																	}
+																>
+																	{statusLabel(
+																		option,
+																	)}
+																</option>
+															),
+														)}
+													</select>
+													<InputError
+														message={errors.status}
+													/>
+												</div>
+											</div>
+
+											{isWeekend(date) ? (
+												<p className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400">
+													Op zaterdag en zondag kunnen
+													geen afspraken worden
+													gepland. Kies een werkdag.
+												</p>
+											) : (
+												<div className="grid gap-2">
+													<Label>Begintijd</Label>
+													<SlotPicker
+														slots={slots}
+														value={starttime}
+														onChange={setStarttime}
+													/>
+													<InputError
+														message={
+															errors.starttime
+														}
+													/>
+												</div>
+											)}
+										</>
 									)}
 
 									<div className="grid gap-2">
@@ -413,9 +456,10 @@ export default function ShowAppointment({
 											onClick={save}
 											disabled={
 												saving ||
-												!starttime ||
-												!timeIsValid ||
-												isWeekend(date)
+												(!locked &&
+													(!starttime ||
+														!timeIsValid ||
+														isWeekend(date)))
 											}
 										>
 											{saving && <Spinner />}
