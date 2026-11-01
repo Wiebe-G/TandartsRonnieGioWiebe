@@ -67,6 +67,7 @@ const missingLabels: Record<string, string> = {
 		'Een eigen tandarts (alleen bij die tandarts kunt u een afspraak maken)',
 	adres: 'Uw adres: straat, huisnummer, postcode en plaats',
 	telefoonnummer: 'Uw telefoonnummer',
+	geboortedatum: 'Uw geboortedatum',
 };
 
 function isWeekend(date: string) {

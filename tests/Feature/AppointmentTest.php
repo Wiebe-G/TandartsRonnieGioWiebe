@@ -16,7 +16,7 @@ beforeEach(function () {
     Notification::fake();
 
     $this->dentist = User::factory()->dentist()->create();
-    $this->customer = User::factory()->withAddress()->create(['employee_id' => $this->dentist->id]);
+    $this->customer = User::factory()->readyToBook($this->dentist)->create();
     $this->treatment = Treatment::factory()->create(['name' => 'Controle', 'duration' => 30]);
 });
 
@@ -273,7 +273,7 @@ test('the booking form lists what is missing from the profile', function () {
     $this->actingAs($customer)
         ->get(route('appointments.create'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('missing', ['tandarts', 'adres', 'telefoonnummer']));
+        ->assertInertia(fn (Assert $page) => $page->where('missing', ['tandarts', 'adres', 'telefoonnummer', 'geboortedatum']));
 
     $this->actingAs($this->customer)
         ->get(route('appointments.create'))
@@ -281,7 +281,7 @@ test('the booking form lists what is missing from the profile', function () {
 });
 
 test('customers without an address cannot book', function () {
-    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'address' => null]);
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'birthday' => '1990-05-17', 'address' => null]);
 
     $this->actingAs($customer)
         ->post(route('appointments.store'), bookingData())
@@ -303,13 +303,13 @@ test('customers without a phone number cannot book', function () {
 
 test('an address without street, house number or city does not count', function () {
     Postcode::create(['address' => '1234 AB 1', 'street' => '', 'house_number' => '1', 'residence' => '', 'city' => '']);
-    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'address' => '1234 AB 1']);
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => '06 12345678', 'birthday' => '1990-05-17', 'address' => '1234 AB 1']);
 
     expect($customer->missingBookingDetails())->toBe(['adres']);
 });
 
 test('after filling in the profile the customer can book', function () {
-    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => null, 'address' => null]);
+    $customer = User::factory()->create(['employee_id' => $this->dentist->id, 'phonenumber' => null, 'birthday' => '1990-05-17', 'address' => null]);
 
     $this->actingAs($customer)
         ->patch(route('profile.update'), [

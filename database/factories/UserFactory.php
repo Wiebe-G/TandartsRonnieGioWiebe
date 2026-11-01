@@ -86,7 +86,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * A customer whose profile is complete enough to book: an address and a phone number.
+     * A customer with a complete address, phone number and birthday (everything but a dentist).
      */
     public function withAddress(): static
     {
@@ -101,8 +101,18 @@ class UserFactory extends Factory
                 'city' => 'Utrecht',
             ]);
 
-            return ['address' => $key, 'phonenumber' => '06 12345678'];
+            return ['address' => $key, 'phonenumber' => '06 12345678', 'birthday' => '1990-05-17'];
         });
+    }
+
+    /**
+     * A customer that can book right away: complete profile and an assigned dentist.
+     */
+    public function readyToBook(?User $dentist = null): static
+    {
+        return $this->withAddress()->state(fn (array $attributes) => [
+            'employee_id' => $dentist->id ?? User::factory()->dentist(),
+        ]);
     }
 
     /**

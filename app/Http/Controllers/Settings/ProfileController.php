@@ -33,6 +33,8 @@ class ProfileController extends Controller
                 'city' => $address->city,
             ] : null,
             'dentists' => $request->user()->isCustomer() ? User::dentistOptions() : null,
+            // Shown as a notice: customers can only book once these are filled in
+            'missingBookingDetails' => $request->user()->isCustomer() ? $request->user()->missingBookingDetails() : [],
         ]);
     }
 

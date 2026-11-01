@@ -181,7 +181,13 @@ class User extends Authenticatable
             $this->assignedDentist() ? null : 'tandarts',
             $addressComplete ? null : 'adres',
             filled($this->phonenumber) ? null : 'telefoonnummer',
+            $this->birthday ? null : 'geboortedatum',
         ]));
+    }
+
+    public function canBook(): bool
+    {
+        return $this->missingBookingDetails() === [];
     }
 
     public function isAssistant(): bool
