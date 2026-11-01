@@ -82,7 +82,7 @@ test('admins can update an employee', function () {
 
     $this->actingAs($this->admin)
         ->put(route('admin.employees.update', $employee), [
-            'role_id' => Role::idFor('dental_hygienist'),
+            'role_id' => Role::dentistId(),
             'firstname' => $employee->firstname,
             'lastname' => $employee->lastname,
             'email' => $employee->email,
@@ -91,7 +91,7 @@ test('admins can update an employee', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('admin.employees.show', $employee));
 
-    expect($employee->refresh()->role->name)->toBe('dental_hygienist');
+    expect($employee->refresh()->role->name)->toBe(Role::DENTIST);
 });
 
 test('admins cannot change their own role', function () {
