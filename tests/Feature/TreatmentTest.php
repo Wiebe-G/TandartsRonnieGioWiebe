@@ -58,8 +58,22 @@ test('a treatment can be edited and made inactive', function () {
 
     $this->treatment->refresh();
     expect($this->treatment->name)->toBe('Uitgebreide controle')
-        ->and((float) $this->treatment->price)->toBe(42.75)
-        ->and((bool) $this->treatment->active)->toBeFalse();
+        ->and((bool) $this->treatment->active)->toBeFalse()
+        // Only admins may change the price
+        ->and((float) $this->treatment->price)->toBe(28.5);
+});
+
+test('admins can change the price of a treatment', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->put(route('treatments.update', $this->treatment->treatment_id), [
+            'Name' => 'Controle',
+            'Price' => 42.75,
+            'DurationInMinutes' => 30,
+            'Active' => true,
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect((float) $this->treatment->refresh()->price)->toBe(42.75);
 });
 
 test('inactive treatments are not offered for new appointments', function () {

@@ -59,7 +59,8 @@ class TreatmentController extends Controller
     public function update(Request $request, Treatment $treatment): RedirectResponse
     {
         $treatment->update([
-            ...$this->validated($request),
+            // Only admins may change the price; other staff keep the current one
+            ...$this->validated($request, withPrice: $request->user()->isAdmin()),
             // Inactive treatments can no longer be picked for a new appointment
             'active' => $request->validate(['active' => ['required', 'boolean']])['active'],
         ]);
@@ -72,12 +73,12 @@ class TreatmentController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validated(Request $request): array
+    private function validated(Request $request, bool $withPrice = true): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:255'],
-            'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            ...($withPrice ? ['price' => ['required', 'numeric', 'min:0', 'max:999999.99']] : []),
             'duration' => ['required', 'integer', 'min:5', 'max:480'],
         ]);
     }

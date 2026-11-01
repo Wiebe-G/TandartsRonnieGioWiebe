@@ -9,7 +9,9 @@ interface Props extends PageProps {
 
 // Zelfde formulier als Create, maar dan voor een bestaande behandeling
 export default function Edit() {
-	const { Treatment, errors } = usePage<Props>().props;
+	const { Treatment, errors, auth } = usePage<Props>().props;
+	// Alleen een beheerder mag de prijs wijzigen
+	const canChangePrice = auth.isAdmin;
 
 	const [name, setName] = useState(Treatment.name);
 	const [description, setDescription] = useState(Treatment.description ?? '');
@@ -25,7 +27,7 @@ export default function Edit() {
 			{
 				Name: name,
 				Description: description,
-				Price: price,
+				...(canChangePrice ? { Price: price } : {}),
 				DurationInMinutes: duration,
 				Active: active,
 			},
@@ -75,8 +77,12 @@ export default function Edit() {
 					value={price}
 					min={0}
 					step="0.01"
+					disabled={!canChangePrice}
 					onChange={(e) => setPrice(Number(e.currentTarget.value))}
 				/>
+				{!canChangePrice && (
+					<span>Alleen een beheerder kan de prijs wijzigen.</span>
+				)}
 				{errors.Price && (
 					<span className="text-red-600">{errors.Price}</span>
 				)}

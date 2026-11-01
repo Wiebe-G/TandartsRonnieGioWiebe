@@ -72,10 +72,13 @@ class TreatmentController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        // Only admins may change the price; other staff keep the current one
+        $canChangePrice = $request->user()->isAdmin();
+
         $validated = $request->validate([
             'Name' => ['required', 'string', 'max:255'],
             'Description' => ['nullable', 'string', 'max:255'],
-            'Price' => ['required', 'numeric', 'min:0'],
+            ...($canChangePrice ? ['Price' => ['required', 'numeric', 'min:0']] : []),
             'DurationInMinutes' => ['required', 'integer', 'min:5', 'max:480'],
             'Active' => ['required', 'boolean'],
         ]);
@@ -83,7 +86,7 @@ class TreatmentController extends Controller
         Treatment::query()->findOrFail($id)->update([
             'name' => $validated['Name'],
             'description' => $validated['Description'] ?? '',
-            'price' => $validated['Price'],
+            ...($canChangePrice ? ['price' => $validated['Price']] : []),
             'duration' => $validated['DurationInMinutes'],
             'active' => $validated['Active'],
         ]);

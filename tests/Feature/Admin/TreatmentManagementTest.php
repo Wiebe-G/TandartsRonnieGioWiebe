@@ -86,6 +86,22 @@ test('a treatment needs a name, a price and a duration', function () {
         ->assertSessionHasErrors(['name', 'price', 'duration']);
 });
 
+test('only admins can change the price of a treatment', function (string $role) {
+    $this->actingAs(User::factory()->role($role)->create())
+        ->put(route('admin.treatments.update', $this->treatment), [
+            'name' => 'Controle',
+            'price' => '99',
+            'duration' => 45,
+            'active' => '1',
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.treatments.index'));
+
+    $this->treatment->refresh();
+    expect((float) $this->treatment->price)->toBe(28.5)
+        ->and((int) $this->treatment->duration)->toBe(45);
+})->with([Role::DENTIST, Role::ASSISTANT]);
+
 test('other staff can manage treatments too, customers cannot', function () {
     $dentist = User::factory()->role(Role::DENTIST)->create();
 

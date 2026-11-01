@@ -1,4 +1,4 @@
-import { Form } from '@inertiajs/react';
+import { Form, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,9 @@ type Props = {
 
 export default function TreatmentForm({ form, submitLabel, treatment }: Props) {
 	const [active, setActive] = useState(treatment?.active ?? true);
+	const { auth } = usePage().props;
+	// Only admins may change the price of an existing treatment
+	const priceLocked = treatment !== undefined && !auth.isAdmin;
 
 	return (
 		<Form
@@ -59,8 +62,14 @@ export default function TreatmentForm({ form, submitLabel, treatment }: Props) {
 								step="0.01"
 								min="0"
 								defaultValue={treatment?.price}
+								disabled={priceLocked}
 								required
 							/>
+							{priceLocked && (
+								<p className="text-muted-foreground text-xs">
+									Alleen een beheerder kan de prijs wijzigen.
+								</p>
+							)}
 							<InputError message={errors.price} />
 						</div>
 
