@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import {Head, Link, router, usePage} from '@inertiajs/react';
 import {
 	ArrowLeft,
 	CalendarClock,
@@ -6,7 +6,7 @@ import {
 	CircleCheck,
 	Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import {useMemo, useState} from 'react';
 import {
 	statusBadgeClass,
 	statusLabel,
@@ -14,8 +14,8 @@ import {
 import SlotPicker from '@/components/admin/slot-picker';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {
 	Dialog,
 	DialogClose,
@@ -25,13 +25,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import type { BusyAppointment } from '@/lib/appointment-slots';
-import { isWeekend, localDate, slotsFor } from '@/lib/appointment-slots';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Spinner} from '@/components/ui/spinner';
+import type {BusyAppointment} from '@/lib/appointment-slots';
+import {isWeekend, localDate, slotsFor} from '@/lib/appointment-slots';
 import admin from '@/routes/admin';
-import type { CalendarAppointment } from '@/types/admin';
+import type {CalendarAppointment} from '@/types/admin';
 
 type Props = {
 	appointment: CalendarAppointment & {
@@ -53,12 +53,12 @@ const selectClass =
 	'border-input dark:bg-input/30 h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs';
 
 export default function ShowAppointment({
-	appointment,
-	rooms,
-	statuses,
-	busy,
-}: Props) {
-	const { errors } = usePage().props;
+											appointment,
+											rooms,
+											statuses,
+											busy,
+										}: Props) {
+	const {errors} = usePage().props;
 
 	const originalDate = appointment.date.slice(0, 10);
 	const originalStart = appointment.starttime.slice(0, 5);
@@ -80,14 +80,14 @@ export default function ShowAppointment({
 		() =>
 			date && !isWeekend(date)
 				? slotsFor({
-						date,
-						durationMinutes: treatment?.duration ?? 30,
-						busy,
-						dentistId: appointment.dentist_id,
-						assistantId: appointment.assistant_id,
-						roomId: appointment.room_id,
-						ignoreAppointmentId: appointment.appointment_id,
-					})
+					date,
+					durationMinutes: treatment?.duration ?? 30,
+					busy,
+					dentistId: appointment.dentist_id,
+					assistantId: appointment.assistant_id,
+					roomId: appointment.room_id,
+					ignoreAppointmentId: appointment.appointment_id,
+				})
 				: [],
 		[date, treatment, busy, appointment],
 	);
@@ -101,7 +101,7 @@ export default function ShowAppointment({
 		setDate(value);
 		setStarttime(value === originalDate ? originalStart : null);
 		if (value && !isWeekend(value)) {
-			router.reload({ only: ['busy'], data: { date: value } });
+			router.reload({only: ['busy'], data: {date: value}});
 		}
 	};
 
@@ -119,7 +119,7 @@ export default function ShowAppointment({
 	const save = () => {
 		router.put(
 			admin.appointments.update.url(appointment.appointment_id),
-			locked ? { note } : { date, starttime, status, note },
+			locked ? {note} : {date, starttime, status, note},
 			{
 				preserveScroll: true,
 				onStart: () => setSaving(true),
@@ -132,8 +132,8 @@ export default function ShowAppointment({
 	const saveRoom = () => {
 		router.put(
 			admin.appointments.room.url(appointment.appointment_id),
-			{ room_id: roomId },
-			{ preserveScroll: true },
+			{room_id: roomId},
+			{preserveScroll: true},
 		);
 	};
 
@@ -173,7 +173,7 @@ export default function ShowAppointment({
 
 	return (
 		<>
-			<Head title={`Afspraak ${customerName}`} />
+			<Head title={`Afspraak ${customerName}`}/>
 
 			<div className="flex flex-col gap-6 p-4">
 				<div className="flex flex-wrap items-start justify-between gap-4">
@@ -191,13 +191,13 @@ export default function ShowAppointment({
 					<div className="flex gap-2">
 						<Button asChild variant="ghost">
 							<Link href={admin.appointments.index()}>
-								<ArrowLeft />
+								<ArrowLeft/>
 								Terug
 							</Link>
 						</Button>
 						{!editMode && appointment.status === 'scheduled' && (
 							<Button onClick={complete} disabled={completing}>
-								{completing ? <Spinner /> : <CircleCheck />}
+								{completing ? <Spinner/> : <CircleCheck/>}
 								Afronden
 							</Button>
 						)}
@@ -206,51 +206,56 @@ export default function ShowAppointment({
 								variant="outline"
 								onClick={() => setEditMode(true)}
 							>
-								<CalendarClock />
+								<CalendarClock/>
 								{locked ? 'Notitie bewerken' : 'Bewerken'}
 							</Button>
 						)}
-						<Dialog>
-							<DialogTrigger asChild>
-								<Button variant="destructive">
-									<Trash2 />
-									Verwijderen
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogTitle>Afspraak verwijderen?</DialogTitle>
-								<DialogDescription>
-									De afspraak van {customerName} op{' '}
-									{formattedDate} om {originalStart} wordt
-									definitief verwijderd.
-								</DialogDescription>
-								<DialogFooter className="gap-2">
-									<DialogClose asChild>
-										<Button variant="secondary">
-											Annuleren
-										</Button>
-									</DialogClose>
-									<Button
-										variant="destructive"
-										onClick={remove}
-									>
+						{appointment.status == "completed"
+							? null
+							: <Dialog>
+								<DialogTrigger asChild>
+									<Button variant="destructive">
+										<Trash2/>
 										Verwijderen
 									</Button>
-								</DialogFooter>
-							</DialogContent>
-						</Dialog>
+								</DialogTrigger>
+								<DialogContent>
+									<DialogTitle>Afspraak verwijderen?</DialogTitle>
+									<DialogDescription>
+										De afspraak van {customerName} op{' '}
+										{formattedDate} om {originalStart} wordt
+										definitief verwijderd.
+									</DialogDescription>
+									<DialogFooter className="gap-2">
+										<DialogClose asChild>
+											<Button variant="secondary">
+												Annuleren
+											</Button>
+										</DialogClose>
+										<Button
+											variant="destructive"
+											onClick={remove}
+										>
+											Verwijderen
+										</Button>
+									</DialogFooter>
+								</DialogContent>
+							</Dialog>
+						}
 					</div>
 				</div>
 
-				{errors.complete && (
-					<p
-						role="alert"
-						className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400"
-					>
-						<CircleAlert className="size-4 shrink-0" />
-						{errors.complete}
-					</p>
-				)}
+				{
+					errors.complete && (
+						<p
+							role="alert"
+							className="flex items-center gap-2 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400"
+						>
+							<CircleAlert className="size-4 shrink-0"/>
+							{errors.complete}
+						</p>
+					)
+				}
 
 				<div className="grid gap-4 lg:grid-cols-[22rem_1fr]">
 					<Card className="h-fit">
@@ -310,16 +315,16 @@ export default function ShowAppointment({
 											disabled={
 												!roomId ||
 												roomId ===
-													String(
-														appointment.room_id ??
-															'',
-													)
+												String(
+													appointment.room_id ??
+													'',
+												)
 											}
 										>
 											Opslaan
 										</Button>
 									</div>
-									<InputError message={errors.room_id} />
+									<InputError message={errors.room_id}/>
 								</div>
 							)}
 						</CardContent>
@@ -462,7 +467,7 @@ export default function ShowAppointment({
 														isWeekend(date)))
 											}
 										>
-											{saving && <Spinner />}
+											{saving && <Spinner/>}
 											Opslaan
 										</Button>
 										<Button
@@ -479,12 +484,13 @@ export default function ShowAppointment({
 				</div>
 			</div>
 		</>
-	);
+	)
+		;
 }
 
 ShowAppointment.layout = {
 	breadcrumbs: [
-		{ title: 'Afspraken', href: admin.appointments.index() },
-		{ title: 'Afspraak', href: '#' },
+		{title: 'Afspraken', href: admin.appointments.index()},
+		{title: 'Afspraak', href: '#'},
 	],
 };
