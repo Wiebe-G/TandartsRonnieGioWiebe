@@ -21,6 +21,7 @@ beforeEach(function () {
         $appointment = Appointment::create([
             'customer_id' => $this->customer->id,
             'dentist_id' => $this->dentist->id,
+            'assistant_id' => $this->assistant->id,
             'date' => '2026-10-20',
             'starttime' => '09:00:00',
             'endtime' => '10:00:00',

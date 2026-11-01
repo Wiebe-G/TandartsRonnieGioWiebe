@@ -18,11 +18,12 @@ use Inertia\Response;
  */
 class InvoiceController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/invoices/index', [
-            // Completed appointments that do not have an invoice yet
+            // Completed appointments that do not have an invoice yet (assistants: only their own)
             'toInvoice' => Appointment::query()
+                ->visibleTo($request->user())
                 ->where('status', Appointment::COMPLETED)
                 ->whereDoesntHave('invoice')
                 ->with(['customer:id,firstname,lastname,email', 'dentist:id,firstname,lastname', 'treatments:treatment_id,name,price'])
@@ -34,6 +35,7 @@ class InvoiceController extends Controller
                     'total' => $this->totalFor($appointment),
                 ]),
             'invoices' => Invoice::query()
+                ->whereHas('appointment', fn ($query) => $query->visibleTo($request->user()))
                 ->with(['appointment.customer:id,firstname,lastname,email', 'appointment.treatments:treatment_id,name'])
                 ->orderByRaw('sent_at is not null') // not sent yet first
                 ->orderByDesc('invoicedate')
@@ -46,8 +48,10 @@ class InvoiceController extends Controller
     /**
      * Make the invoice for a completed appointment; the amount is fixed from the treatment prices now.
      */
-    public function store(Appointment $appointment): RedirectResponse
+    public function store(Request $request, Appointment $appointment): RedirectResponse
     {
+        abort_unless($appointment->isVisibleTo($request->user()), 403);
+
         if ($appointment->status !== Appointment::COMPLETED) {
             throw ValidationException::withMessages(['invoice' => 'Alleen afgeronde afspraken kunnen gefactureerd worden.']);
         }
@@ -68,8 +72,10 @@ class InvoiceController extends Controller
         return to_route('admin.invoices.show', $invoice);
     }
 
-    public function show(Invoice $invoice): Response
+    public function show(Request $request, Invoice $invoice): Response
     {
+        $this->ensureVisible($request, $invoice);
+
         return Inertia::render('admin/invoices/show', [
             'invoice' => InvoicePresenter::detail($invoice),
         ]);
@@ -80,6 +86,8 @@ class InvoiceController extends Controller
      */
     public function updatePayment(Request $request, Invoice $invoice): RedirectResponse
     {
+        $this->ensureVisible($request, $invoice);
+
         $paid = $request->validate(['paid' => ['required', 'boolean']])['paid'];
 
         $invoice->update(['paid_at' => $paid ? now() : null]);
@@ -95,8 +103,10 @@ class InvoiceController extends Controller
     /**
      * Email the invoice to the customer. Sending again is allowed (e.g. when it got lost).
      */
-    public function send(Invoice $invoice): RedirectResponse
+    public function send(Request $request, Invoice $invoice): RedirectResponse
     {
+        $this->ensureVisible($request, $invoice);
+
         $customer = $invoice->appointment->customer;
 
         $customer->notify(new InvoiceSent($invoice));
@@ -105,6 +115,14 @@ class InvoiceController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Factuur '.$invoice->number().' verstuurd naar '.$customer->email.'.']);
 
         return back();
+    }
+
+    /**
+     * Assistants only handle invoices for their own appointments.
+     */
+    private function ensureVisible(Request $request, Invoice $invoice): void
+    {
+        abort_unless($invoice->appointment->isVisibleTo($request->user()), 403);
     }
 
     private function totalFor(Appointment $appointment): string

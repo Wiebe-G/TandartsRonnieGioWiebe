@@ -94,7 +94,7 @@ test('the end time is rounded up to the next half hour', function () {
 test('an appointment without an assistant can be opened', function () {
     ($this->plan)(['Assistant_id' => null]);
 
-    $this->actingAs($this->assistant)
+    $this->actingAs($this->dentist)
         ->get(route('appointments.view', Appointment::query()->sole()->appointment_id))
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('Appointment.assistant', null));

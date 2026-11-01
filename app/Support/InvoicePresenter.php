@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Invoice;
+use App\Models\User;
 
 /**
  * How an invoice is sent to the pages; shared by the staff pages and the customer's own invoice pages.
@@ -53,14 +54,26 @@ class InvoicePresenter
                     'price' => $treatment->price,
                 ]),
             ],
-            'customer' => [
-                'name' => $customer->name,
-                'email' => $customer->email,
-                'address' => $customer->postcode ? [
-                    'street' => $customer->postcode->street.' '.$customer->postcode->house_number,
-                    'city' => $customer->postcode->postcode().' '.$customer->postcode->city,
-                ] : null,
-            ],
+            'customer' => self::customer($customer),
+        ];
+    }
+
+    /**
+     * Who the invoice is addressed to; also used for the example invoice when booking.
+     *
+     * @return array<string, mixed>
+     */
+    public static function customer(User $customer): array
+    {
+        $customer->loadMissing('postcode');
+
+        return [
+            'name' => $customer->name,
+            'email' => $customer->email,
+            'address' => $customer->postcode ? [
+                'street' => $customer->postcode->street.' '.$customer->postcode->house_number,
+                'city' => $customer->postcode->postcode().' '.$customer->postcode->city,
+            ] : null,
         ];
     }
 }

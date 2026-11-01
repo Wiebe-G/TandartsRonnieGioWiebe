@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import { InvoiceDocument } from '@/components/invoice-document';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { create, index, store } from '@/routes/appointments';
 import { edit as editProfile } from '@/routes/profile';
+import type { InvoiceDetail } from '@/types/admin';
 
 type Treatment = {
 	id: number;
@@ -33,6 +35,10 @@ type Props = {
 	slots: string[];
 	/** Profile details still missing, e.g. ["adres", "telefoonnummer"] */
 	missing: string[];
+	/** Name and address on the example invoice */
+	invoiceCustomer: InvoiceDetail['customer'];
+	/** Days to pay after the invoice date */
+	paymentDays: number;
 };
 
 type BookingForm = {
@@ -70,6 +76,13 @@ const missingLabels: Record<string, string> = {
 	geboortedatum: 'Uw geboortedatum',
 };
 
+function addDays(date: string, days: number) {
+	const next = new Date(`${date}T00:00:00`);
+	next.setDate(next.getDate() + days);
+
+	return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
+
 function isWeekend(date: string) {
 	const day = new Date(`${date}T00:00:00`).getDay();
 
@@ -83,6 +96,8 @@ export default function CreateAppointment({
 	duration,
 	slots,
 	missing,
+	invoiceCustomer,
+	paymentDays,
 }: Props) {
 	// After choosing everything the customer first sees a summary, and only books from there.
 	const [reviewing, setReviewing] = useState(false);
@@ -196,6 +211,31 @@ export default function CreateAppointment({
 
 	if (reviewing) {
 		const endtime = addMinutes(form.data.starttime, duration);
+		// What the invoice will look like after the appointment (dated on the appointment day)
+		const exampleInvoice: InvoiceDetail = {
+			invoice_id: 0,
+			number: '',
+			invoicedate: form.data.date,
+			expiration_date: addDays(form.data.date, paymentDays),
+			amount: total.toFixed(2),
+			sent_at: null,
+			paid_at: null,
+			status: 'pending',
+			overdue: false,
+			customer_name: invoiceCustomer.name,
+			customer_email: invoiceCustomer.email,
+			treatments: chosenTreatments.map((treatment) => treatment.name),
+			appointment: {
+				date: form.data.date,
+				starttime: form.data.starttime,
+				dentist: chosenDentist?.name ?? null,
+				treatments: chosenTreatments.map((treatment) => ({
+					name: treatment.name,
+					price: treatment.price,
+				})),
+			},
+			customer: invoiceCustomer,
+		};
 
 		return (
 			<>
@@ -275,6 +315,8 @@ export default function CreateAppointment({
 							</dl>
 						</CardContent>
 					</Card>
+
+					<InvoiceDocument invoice={exampleInvoice} preview />
 
 					<p className="text-muted-foreground text-sm">
 						Annuleren kan online tot 48 uur van tevoren.

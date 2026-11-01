@@ -12,7 +12,8 @@ class RouteController extends Controller
     //
     public function appointments()
     {
-        $Appointments = Appointment::with(['customer', 'treatments'])->get()->values();
+        // Tandartsen en assistenten zien alleen hun eigen afspraken
+        $Appointments = Appointment::query()->visibleTo(auth()->user())->with(['customer', 'treatments'])->get()->values();
 
         return Inertia::render('Appointments', [
             'Appointments' => $Appointments,

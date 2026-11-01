@@ -18,13 +18,30 @@ export function formatInvoiceDate(value: string): string {
 	);
 }
 
-/** The invoice itself; the same for the staff and for the customer. */
-export function InvoiceDocument({ invoice }: { invoice: InvoiceDetail }) {
+/**
+ * The invoice itself; the same for the staff and for the customer.
+ * With preview it is an example before booking: no number and no status yet.
+ */
+export function InvoiceDocument({
+	invoice,
+	preview = false,
+}: {
+	invoice: InvoiceDetail;
+	preview?: boolean;
+}) {
 	return (
 		<Card className="max-w-3xl">
 			<CardHeader className="flex flex-row items-center justify-between">
-				<CardTitle>Factuur {invoice.number}</CardTitle>
-				<InvoiceStatus invoice={invoice} />
+				<CardTitle>
+					{preview ? 'Voorbeeldfactuur' : `Factuur ${invoice.number}`}
+				</CardTitle>
+				{preview ? (
+					<span className="text-muted-foreground text-sm">
+						Voorbeeld
+					</span>
+				) : (
+					<InvoiceStatus invoice={invoice} />
+				)}
 			</CardHeader>
 			<CardContent className="space-y-6 text-sm">
 				<div className="grid gap-6 sm:grid-cols-2">
@@ -46,8 +63,14 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceDetail }) {
 						</p>
 					</div>
 					<dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-						<dt className="text-muted-foreground">Factuurnummer</dt>
-						<dd>{invoice.number}</dd>
+						{!preview && (
+							<>
+								<dt className="text-muted-foreground">
+									Factuurnummer
+								</dt>
+								<dd>{invoice.number}</dd>
+							</>
+						)}
 						<dt className="text-muted-foreground">Factuurdatum</dt>
 						<dd>{formatInvoiceDate(invoice.invoicedate)}</dd>
 						<dt className="text-muted-foreground">Betalen voor</dt>
@@ -99,12 +122,21 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceDetail }) {
 					</tfoot>
 				</table>
 
-				{invoice.status === 'pending' && (
+				{preview ? (
 					<p className="text-muted-foreground">
-						Wilt u het bedrag uiterlijk{' '}
-						{formatInvoiceDate(invoice.expiration_date)} overmaken
-						onder vermelding van factuurnummer {invoice.number}?
+						Dit is een voorbeeld. Na de behandeling krijgt u de
+						echte factuur per e-mail. Het bedrag kan anders zijn als
+						er tijdens de afspraak iets anders gedaan wordt.
 					</p>
+				) : (
+					invoice.status === 'pending' && (
+						<p className="text-muted-foreground">
+							Wilt u het bedrag uiterlijk{' '}
+							{formatInvoiceDate(invoice.expiration_date)}{' '}
+							overmaken onder vermelding van factuurnummer{' '}
+							{invoice.number}?
+						</p>
+					)
 				)}
 			</CardContent>
 		</Card>

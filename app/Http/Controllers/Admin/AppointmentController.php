@@ -26,10 +26,12 @@ use Inertia\Response;
  */
 class AppointmentController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Inertia::render('admin/appointments/index', [
+            // Dentists and assistants only see their own appointments
             'appointments' => Appointment::query()
+                ->visibleTo($request->user())
                 ->with([
                     'customer:id,firstname,lastname',
                     'dentist:id,firstname,lastname',
@@ -110,11 +112,18 @@ class AppointmentController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Afspraak ingepland.']);
 
+        // Planned for someone else: the assistant cannot open it, so back to the overview
+        if (! $appointment->isVisibleTo($request->user())) {
+            return to_route('admin.appointments.index');
+        }
+
         return to_route('admin.appointments.show', $appointment);
     }
 
     public function show(Request $request, Appointment $appointment): Response
     {
+        $this->ensureVisible($request, $appointment);
+
         return Inertia::render('admin/appointments/show', [
             'appointment' => $appointment->load(['customer', 'dentist', 'assistant', 'room', 'treatments']),
             'rooms' => Room::query()->orderBy('name')->get(['room_id', 'name']),
@@ -129,6 +138,8 @@ class AppointmentController extends Controller
      */
     public function update(Request $request, Appointment $appointment): RedirectResponse
     {
+        $this->ensureVisible($request, $appointment);
+
         // A completed appointment is locked: only the note can still be changed
         if ($appointment->isLocked()) {
             $appointment->update(['note' => $request->validate(['note' => ['nullable', 'string', 'max:255']])['note'] ?? '']);
@@ -176,8 +187,10 @@ class AppointmentController extends Controller
     /**
      * Mark the appointment as completed; possible once it has started (also after it ended).
      */
-    public function complete(Appointment $appointment): RedirectResponse
+    public function complete(Request $request, Appointment $appointment): RedirectResponse
     {
+        $this->ensureVisible($request, $appointment);
+
         if ($appointment->status !== Appointment::SCHEDULED) {
             throw ValidationException::withMessages([
                 'complete' => 'Alleen geplande afspraken kunnen afgerond worden.',
@@ -211,6 +224,8 @@ class AppointmentController extends Controller
 
     public function updateRoom(Request $request, Appointment $appointment): RedirectResponse
     {
+        $this->ensureVisible($request, $appointment);
+
         if ($appointment->isLocked()) {
             throw ValidationException::withMessages(['room_id' => Appointment::LOCKED_MESSAGE]);
         }
@@ -231,8 +246,10 @@ class AppointmentController extends Controller
         return back();
     }
 
-    public function destroy(Appointment $appointment): RedirectResponse
+    public function destroy(Request $request, Appointment $appointment): RedirectResponse
     {
+        $this->ensureVisible($request, $appointment);
+
         // An invoiced appointment stays, so the invoice keeps pointing at what was done
         if ($appointment->invoice()->exists()) {
             throw ValidationException::withMessages([
@@ -249,6 +266,14 @@ class AppointmentController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Afspraak verwijderd.']);
 
         return to_route('admin.appointments.index');
+    }
+
+    /**
+     * Dentists and assistants can only open and change their own appointments.
+     */
+    private function ensureVisible(Request $request, Appointment $appointment): void
+    {
+        abort_unless($appointment->isVisibleTo($request->user()), 403);
     }
 
     /**

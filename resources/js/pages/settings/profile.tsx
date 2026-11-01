@@ -2,7 +2,6 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { CalendarX } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { LogoutButton } from '@/components/logout-button';
@@ -307,8 +306,6 @@ export default function Profile({
 				/>
 				<LogoutButton variant="secondary" size="default" />
 			</section>
-
-			<DeleteUser />
 		</>
 	);
 }

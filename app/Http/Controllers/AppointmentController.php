@@ -89,7 +89,7 @@ class AppointmentController extends Controller
         ]);
 
         return redirect()->route('appointments')
-            ->with('success', 'Appointment succesvol toegevoegd');
+            ->with('success', 'Afspraak succesvol toegevoegd');
     }
 
     /**
@@ -101,6 +101,8 @@ class AppointmentController extends Controller
             ->where('appointment_id', $id)
             ->with(['customer', 'treatments', 'dentist', 'assistant'])
             ->firstOrFail();
+        // Alleen je eigen afspraken (beheerders zien alles)
+        abort_unless($appointment->isVisibleTo(auth()->user()), 403);
 
         return Inertia::render('Appointments/Show', [
             'Appointment' => $appointment,
@@ -127,6 +129,7 @@ class AppointmentController extends Controller
             'Starttime' => ['required', 'date_format:H:i,H:i:s'],
         ]);
         $Appointment = Appointment::query()->with('treatments')->find($validated['Appointment_Id']);
+        abort_unless($Appointment->isVisibleTo(auth()->user()), 403);
 
         // Een afgeronde afspraak ligt vast: alleen de notitie mag nog veranderen
         if ($Appointment->isLocked()) {
@@ -163,6 +166,7 @@ class AppointmentController extends Controller
             'id' => ['required', 'exists:appointment,appointment_id'],
         ]);
         $appointment = Appointment::query()->find($validated['id']);
+        abort_unless($appointment->isVisibleTo(auth()->user()), 403);
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
         // Een afspraak met een factuur blijft bestaan
         if ($appointment->invoice()->exists()) {

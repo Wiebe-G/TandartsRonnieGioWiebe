@@ -57,11 +57,11 @@ export default function TwoFactorRecoveryCodes({
 			<CardHeader>
 				<CardTitle className="flex gap-3">
 					<LockKeyhole className="size-4" aria-hidden="true" />
-					2FA recovery codes
+					Herstelcodes
 				</CardTitle>
 				<CardDescription>
-					Recovery codes let you regain access if you lose your 2FA
-					device. Store them in a secure password manager.
+					Met een herstelcode komt u weer in uw account als u uw
+					telefoon kwijt bent. Bewaar ze op een veilige plek.
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -76,7 +76,8 @@ export default function TwoFactorRecoveryCodes({
 							className="size-4"
 							aria-hidden="true"
 						/>
-						{codesAreVisible ? 'Hide' : 'View'} recovery codes
+						Herstelcodes{' '}
+						{codesAreVisible ? 'verbergen' : 'bekijken'}
 					</Button>
 
 					{canRegenerateCodes && (
@@ -92,7 +93,7 @@ export default function TwoFactorRecoveryCodes({
 									disabled={processing}
 									aria-describedby="regenerate-warning"
 								>
-									<RefreshCw /> Regenerate codes
+									<RefreshCw /> Nieuwe codes maken
 								</Button>
 							)}
 						</Form>
@@ -112,7 +113,7 @@ export default function TwoFactorRecoveryCodes({
 									ref={codesSectionRef}
 									className="bg-muted grid gap-1 rounded-lg p-4 font-mono text-sm"
 									role="list"
-									aria-label="Recovery codes"
+									aria-label="Herstelcodes"
 								>
 									{recoveryCodesList.length ? (
 										recoveryCodesList.map((code, index) => (
@@ -127,7 +128,7 @@ export default function TwoFactorRecoveryCodes({
 									) : (
 										<div
 											className="space-y-2"
-											aria-label="Loading recovery codes"
+											aria-label="Herstelcodes laden"
 										>
 											{Array.from(
 												{ length: 8 },
@@ -145,13 +146,13 @@ export default function TwoFactorRecoveryCodes({
 
 								<div className="text-muted-foreground text-xs select-none">
 									<p id="regenerate-warning">
-										Each recovery code can be used once to
-										access your account and will be removed
-										after use. If you need more, click{' '}
+										Elke herstelcode werkt maar één keer.
+										Heeft u meer nodig? Klik dan hierboven
+										op{' '}
 										<span className="font-bold">
-											Regenerate codes
-										</span>{' '}
-										above.
+											Nieuwe codes maken
+										</span>
+										.
 									</p>
 								</div>
 							</>

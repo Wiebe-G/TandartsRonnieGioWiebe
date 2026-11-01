@@ -147,6 +147,7 @@ class User extends Authenticatable
     {
         return array_values(static::query()
             ->where('role_id', Role::dentistId())
+            ->where('status', '!=', 'inactive')
             ->orderBy('firstname')
             ->get()
             ->map(fn (User $dentist) => ['id' => $dentist->id, 'name' => $dentist->name])
@@ -161,7 +162,8 @@ class User extends Authenticatable
     {
         $dentist = $this->employee;
 
-        return $dentist && (int) $dentist->role_id === Role::dentistId() ? $dentist : null;
+        // A dentist who no longer works here (inactive) does not count either
+        return $dentist && (int) $dentist->role_id === Role::dentistId() && $dentist->status !== 'inactive' ? $dentist : null;
     }
 
     /**

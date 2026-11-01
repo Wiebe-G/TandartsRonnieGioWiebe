@@ -15,7 +15,7 @@ class FeedbackController extends Controller
      */
     public function store(Request $request, Appointment $appointment): RedirectResponse
     {
-        abort_unless($appointment->customer_id === $request->user()->id && $appointment->tookPlace(), 403);
+        abort_unless((int) $appointment->customer_id === $request->user()->id && $appointment->tookPlace(), 403);
 
         $validated = $request->validate([
             'satisfied' => ['required', 'boolean'],

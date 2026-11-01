@@ -30,7 +30,8 @@ trait ProfileValidationRules
      */
     protected function dentistRules(): array
     {
-        return ['nullable', 'integer', Rule::exists('users', 'id')->where('role_id', Role::dentistId())];
+        // Only dentists who still work here
+        return ['nullable', 'integer', Rule::exists('users', 'id')->where('role_id', Role::dentistId())->whereNot('status', 'inactive')];
     }
 
     /**
