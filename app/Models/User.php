@@ -147,7 +147,8 @@ class User extends Authenticatable
     {
         $dentist = $this->employee;
 
-        return $dentist && (int) $dentist->role_id === Role::dentistId() ? $dentist : null;
+        // A dentist who no longer works here (inactive) does not count either
+        return $dentist && (int) $dentist->role_id === Role::dentistId() && $dentist->status !== 'inactive' ? $dentist : null;
     }
 
     /**

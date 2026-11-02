@@ -25,7 +25,7 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             'treatments' => ['required', 'array', 'min:1'],
-            'treatments.*' => ['integer', Rule::exists('treatment', 'treatment_id')->where('active', true)],
+            'treatments.*' => ['integer', 'distinct', Rule::exists('treatment', 'treatment_id')->where('active', true)],
             // Only the customer's own dentist; without an assigned dentist nothing is accepted
             'dentist_id' => ['required', 'integer', Rule::in([$this->user()->assignedDentist()?->id])],
             'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],

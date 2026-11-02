@@ -5,20 +5,24 @@ namespace App\Http\Controllers;
 use App\Actions\Appointments\AvailableSlots;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\Invoice;
 use App\Models\Treatment;
 use App\Models\User;
 use App\Notifications\AppointmentBooked;
 use App\Notifications\AppointmentCancelled;
+use App\Support\InvoicePresenter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BookingController extends Controller
 {
     /**
-     * The agenda: customers see their own appointments, employees see the whole practice.
+     * The agenda: customers see their own appointments, dentists and assistants the ones they work on, admins all.
      */
     public function index(Request $request): Response
     {
@@ -33,7 +37,7 @@ class BookingController extends Controller
 
         $appointments = Appointment::query()
             ->with(['customer', 'dentist', 'treatments'])
-            ->when($user->isCustomer(), fn ($query) => $query->where('customer_id', $user->id))
+            ->visibleTo($user)
             ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->orderBy('date')
             ->orderBy('starttime')
@@ -100,28 +104,45 @@ class BookingController extends Controller
             'defaultDentist' => $dentist?->id,
             // Profile details still missing; booking is only possible when this is empty
             'missing' => $user->missingBookingDetails(),
+            // For the example invoice on the summary step
+            'invoiceCustomer' => InvoicePresenter::customer($user),
+            'paymentDays' => Invoice::PAYMENT_DAYS,
             'duration' => $duration,
             'slots' => $slots,
         ]);
     }
 
-    public function store(StoreAppointmentRequest $request): RedirectResponse
+    public function store(StoreAppointmentRequest $request, AvailableSlots $availableSlots): RedirectResponse
     {
+        /** @var User $user */
+        $user = $request->user();
         $start = Carbon::parse($request->string('date').' '.$request->string('starttime'));
 
-        $appointment = Appointment::create([
-            'customer_id' => $request->user()->id,
-            'dentist_id' => $request->integer('dentist_id'),
-            'date' => $start->toDateString(),
-            'starttime' => $start->format('H:i'),
-            'endtime' => $start->copy()->addMinutes($request->duration())->format('H:i'),
-            'status' => Appointment::SCHEDULED,
-            'note' => $request->input('note'),
-        ]);
+        $appointment = DB::transaction(function () use ($request, $user, $start, $availableSlots) {
+            // Lock the dentist and check the time again, so two people booking at once cannot both get it
+            $dentist = User::query()->lockForUpdate()->findOrFail($request->integer('dentist_id'));
 
-        $appointment->treatments()->attach($request->input('treatments'));
+            if (! in_array($start->format('H:i'), $availableSlots->for($dentist, $user, $start->copy()->startOfDay(), $request->duration()), true)) {
+                throw ValidationException::withMessages(['starttime' => 'Dit tijdstip is net door iemand anders geboekt. Kies een ander tijdstip.']);
+            }
 
-        $request->user()->notify(new AppointmentBooked($appointment));
+            $appointment = Appointment::create([
+                'customer_id' => $user->id,
+                'dentist_id' => $dentist->id,
+                'date' => $start->toDateString(),
+                'starttime' => $start->format('H:i'),
+                'endtime' => $start->copy()->addMinutes($request->duration())->format('H:i'),
+                'status' => Appointment::SCHEDULED,
+                'note' => $request->input('note'),
+            ]);
+
+            $appointment->treatments()->attach($request->input('treatments'));
+
+            return $appointment;
+        });
+
+        // The appointment is booked; if the mail fails it is logged, the customer still sees it in the agenda
+        rescue(fn () => $user->notify(new AppointmentBooked($appointment)));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Uw afspraak is ingepland. U ontvangt een bevestiging per e-mail.']);
 
@@ -133,7 +154,7 @@ class BookingController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        abort_if($user->isCustomer() && $appointment->customer_id !== $user->id, 403);
+        abort_unless($appointment->isVisibleTo($user), 403);
 
         if (! $this->canCancel($user, $appointment)) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Deze afspraak kan niet meer online geannuleerd worden. Neem contact op met de praktijk.']);
@@ -143,7 +164,7 @@ class BookingController extends Controller
 
         $appointment->update(['status' => Appointment::CANCELLED]);
 
-        $appointment->customer->notify(new AppointmentCancelled($appointment));
+        rescue(fn () => $appointment->customer->notify(new AppointmentCancelled($appointment)));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'De afspraak is geannuleerd. U ontvangt een bevestiging per e-mail.']);
 

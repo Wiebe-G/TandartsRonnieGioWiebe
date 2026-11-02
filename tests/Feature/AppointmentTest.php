@@ -246,6 +246,7 @@ test('customers cannot cancel within 48 hours of the appointment', function () {
 
 test('employees can still cancel an appointment within 48 hours', function () {
     $appointment = Appointment::factory()->for($this->customer, 'customer')->create([
+        'dentist_id' => $this->dentist->id,
         'date' => '2026-10-19', 'starttime' => '10:00', 'endtime' => '10:30',
     ]);
 
@@ -332,4 +333,39 @@ test('after filling in the profile the customer can book', function () {
         ->assertSessionHasNoErrors();
 
     expect(Appointment::count())->toBe(1);
+});
+
+test('choosing the same treatment twice is an error, not a crash', function () {
+    $this->actingAs($this->customer)
+        ->post(route('appointments.store'), bookingData([
+            'treatments' => [$this->treatment->treatment_id, $this->treatment->treatment_id],
+        ]))
+        ->assertSessionHasErrors('treatments.0');
+
+    expect(Appointment::count())->toBe(0);
+});
+
+test('the booking is kept when the confirmation mail fails', function () {
+    Notification::shouldReceive('send')->andThrow(new RuntimeException('Mailserver is down'));
+
+    $this->actingAs($this->customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    expect(Appointment::count())->toBe(1);
+});
+
+test('a dentist who no longer works here cannot be booked or chosen', function () {
+    $this->dentist->update(['status' => 'inactive']);
+
+    expect($this->customer->refresh()->assignedDentist())->toBeNull()
+        ->and($this->customer->missingBookingDetails())->toContain('tandarts')
+        ->and(collect(User::dentistOptions())->pluck('id'))->not->toContain($this->dentist->id);
+
+    $this->actingAs($this->customer)
+        ->post(route('appointments.store'), bookingData())
+        ->assertSessionHasErrors('dentist_id');
+
+    expect(Appointment::count())->toBe(0);
 });

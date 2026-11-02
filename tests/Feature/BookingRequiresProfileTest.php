@@ -57,3 +57,15 @@ test('a customer with complete details can open the booking form', function () {
         ->get(route('profile.edit'))
         ->assertInertia(fn (Assert $page) => $page->where('missingBookingDetails', []));
 });
+
+test('the booking form gets the details for the example invoice', function () {
+    $customer = User::factory()->readyToBook($this->dentist)->create();
+
+    $this->actingAs($customer)
+        ->get(route('appointments.create'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('invoiceCustomer.name', $customer->name)
+            ->where('invoiceCustomer.email', $customer->email)
+            ->where('invoiceCustomer.address.street', 'Dorpsstraat '.$customer->postcode->house_number)
+            ->where('paymentDays', 14));
+});

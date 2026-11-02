@@ -167,6 +167,46 @@ class Appointment extends Model
     }
 
     /**
+     * Admins see every appointment, customers their own,
+     * dentists and assistants only the ones they work on.
+     */
+    public function isVisibleTo(User $user): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($user->isCustomer()) {
+            return (int) $this->customer_id === $user->id;
+        }
+
+        return in_array($user->id, [(int) $this->dentist_id, (int) $this->assistant_id], true);
+    }
+
+    /**
+     * Appointments the user may see, see isVisibleTo().
+     *
+     * @param  Builder<Appointment>  $query
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if ($user->isCustomer()) {
+            $query->where('customer_id', $user->id);
+
+            return;
+        }
+
+        $query->where(fn (Builder $query) => $query
+            ->where('dentist_id', $user->id)
+            ->orWhere('assistant_id', $user->id));
+    }
+
+    /**
      * Appointments that took place, see tookPlace().
      *
      * @param  Builder<Appointment>  $query

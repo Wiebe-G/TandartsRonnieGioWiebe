@@ -124,3 +124,13 @@ test('email verification status is unchanged when the email address is unchanged
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
+
+test('users cannot delete their own account', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->delete('/settings/profile', ['password' => 'password'])
+        ->assertMethodNotAllowed();
+
+    expect($user->fresh())->not->toBeNull();
+});
