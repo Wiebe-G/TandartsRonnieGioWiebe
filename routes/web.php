@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\TreatmentController as AdminTreatmentController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AppointmentController;
@@ -95,6 +96,7 @@ Route::middleware(['auth', 'Admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('employees', EmployeeController::class);
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::put('/calendar/appointments/{appointment}', [CalendarController::class, 'update'])->name('calendar.update');
+    Route::get('/logboek', [LogController::class, 'index'])->name('logs.index');
 });
 
 // Making appointments and sending invoices: assistants and admins only

@@ -54,11 +54,11 @@ test('new users can register', function () {
     $response->assertRedirect(route('dashboard'));
 });
 
-test('new customers can choose their dentist when registering', function () {
+test('new customers do not choose a dentist when registering, the admin assigns it', function () {
     $dentist = User::factory()->dentist()->create();
 
     $this->get(route('register'))
-        ->assertInertia(fn (Assert $page) => $page->where('dentists.0.id', $dentist->id));
+        ->assertInertia(fn (Assert $page) => $page->missing('dentists'));
 
     $this->post(route('register.store'), [
         'firstname' => 'Test',
@@ -71,22 +71,6 @@ test('new customers can choose their dentist when registering', function () {
     ])->assertSessionHasNoErrors();
 
     $user = User::where('email', 'test@example.com')->first();
-    expect($user->employee_id)->toBe($dentist->id);
+    expect($user->employee_id)->toBeNull();
     expect($user->phonenumber)->toBe('06 12345678');
-});
-
-test('only dentists can be chosen when registering', function () {
-    $notADentist = User::factory()->create();
-
-    $this->post(route('register.store'), [
-        'firstname' => 'Test',
-        'lastname' => 'User',
-        'email' => 'test@example.com',
-        'phonenumber' => '06 12345678',
-        'employee_id' => $notADentist->id,
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ])->assertSessionHasErrors('employee_id');
-
-    $this->assertGuest();
 });

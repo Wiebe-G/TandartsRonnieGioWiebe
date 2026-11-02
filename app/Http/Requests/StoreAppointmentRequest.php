@@ -99,7 +99,7 @@ class StoreAppointmentRequest extends FormRequest
         return [
             'dentist_id.in' => $this->user()->assignedDentist()
                 ? 'U kunt alleen een afspraak maken bij uw eigen tandarts.'
-                : 'U heeft nog geen tandarts. Kies eerst een tandarts in uw profiel.',
+                : 'U heeft nog geen tandarts. De praktijk wijst u een tandarts toe; neem contact met ons op.',
         ];
     }
 }

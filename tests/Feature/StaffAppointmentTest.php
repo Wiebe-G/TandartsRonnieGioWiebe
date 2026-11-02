@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\DB;
 beforeEach(function () {
     $this->dentist = User::factory()->role(Role::DENTIST)->create();
     $this->assistant = User::factory()->role(Role::ASSISTANT)->create();
-    $this->customer = User::factory()->create();
+    $this->customer = User::factory()->withDentist($this->dentist)->create();
+    // Another customer of the same dentist
+    $this->otherCustomer = fn () => User::factory()->withDentist($this->dentist)->create()->id;
     $this->treatment = Treatment::create(['name' => 'Controle', 'price' => 28.5, 'duration' => 30, 'active' => true]);
 
     // Wednesday 21 October 2026, the same fields the page sends
     $this->payload = fn (array $attributes = []) => [
         'Customer_id' => $this->customer->id,
-        'Dentist_id' => $this->dentist->id,
         'Assistant_id' => $this->assistant->id,
         'Date' => '2026-10-21 09:00:00',
         'Type' => $this->treatment->treatment_id,
@@ -53,8 +54,18 @@ test('the assistant and the note are optional', function () {
     expect(Appointment::query()->sole()->assistant_id)->toBeNull();
 });
 
+test('the dentist is always the one assigned to the customer', function () {
+    $otherDentist = User::factory()->role(Role::DENTIST)->create();
+
+    // A dentist sent along is ignored
+    ($this->plan)(['Dentist_id' => $otherDentist->id])->assertSessionHasNoErrors();
+    expect(Appointment::query()->sole()->dentist_id)->toBe($this->dentist->id);
+
+    ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Date' => '2026-10-21 11:00:00'])
+        ->assertSessionHasErrors('Customer_id');
+});
+
 test('roles must match', function () {
-    ($this->plan)(['Dentist_id' => $this->assistant->id])->assertSessionHasErrors('Dentist_id');
     ($this->plan)(['Assistant_id' => $this->customer->id])->assertSessionHasErrors('Assistant_id');
     ($this->plan)(['Customer_id' => $this->dentist->id])->assertSessionHasErrors('Customer_id');
 });
@@ -62,11 +73,11 @@ test('roles must match', function () {
 test('nobody can be booked twice, but back to back is fine', function () {
     ($this->plan)();
 
-    ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Assistant_id' => null])
+    ($this->plan)(['Customer_id' => ($this->otherCustomer)(), 'Assistant_id' => null])
         ->assertSessionHasErrors('Dentist_id');
-    ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Dentist_id' => User::factory()->role(Role::DENTIST)->create()->id])
+    ($this->plan)(['Customer_id' => User::factory()->withDentist(User::factory()->role(Role::DENTIST)->create())->create()->id])
         ->assertSessionHasErrors('Assistant_id');
-    ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Date' => '2026-10-21 09:30:00'])
+    ($this->plan)(['Customer_id' => ($this->otherCustomer)(), 'Date' => '2026-10-21 09:30:00'])
         ->assertSessionHasNoErrors();
 
     expect(Appointment::query()->count())->toBe(2);
@@ -123,7 +134,7 @@ test('an appointment can be moved and keeps its status', function () {
 
 test('moving follows the planning rules', function () {
     ($this->plan)();
-    ($this->plan)(['Customer_id' => User::factory()->create()->id, 'Date' => '2026-10-21 11:00:00']);
+    ($this->plan)(['Customer_id' => ($this->otherCustomer)(), 'Date' => '2026-10-21 11:00:00']);
     $second = Appointment::query()->where('starttime', '11:00:00')->sole();
 
     $move = fn (string $date, string $start) => $this->actingAs($this->assistant)->post(route('appointments.update'), [

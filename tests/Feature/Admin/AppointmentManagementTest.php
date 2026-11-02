@@ -20,7 +20,6 @@ beforeEach(function () {
     $this->payload = fn (array $attributes = []) => [
         'customer_id' => $this->customer->id,
         'treatment_id' => $this->treatment->treatment_id,
-        'dentist_id' => $this->dentist->id,
         'assistant_id' => $this->assistant->id,
         'room_id' => $this->room->room_id,
         'date' => '2026-10-21',
@@ -81,13 +80,21 @@ test('planning redirects to the new appointment', function () {
 
 test('everything except the note is required', function () {
     ($this->plan)([
-        'customer_id' => null, 'treatment_id' => null, 'dentist_id' => null,
+        'customer_id' => null, 'treatment_id' => null,
         'assistant_id' => null, 'room_id' => null, 'starttime' => null,
-    ])->assertSessionHasErrors(['customer_id', 'treatment_id', 'dentist_id', 'assistant_id', 'room_id', 'starttime']);
+    ])->assertSessionHasErrors(['customer_id', 'treatment_id', 'assistant_id', 'room_id', 'starttime']);
+});
+
+test('the dentist is always the one assigned to the customer', function () {
+    // A dentist sent along is ignored
+    ($this->plan)(['dentist_id' => User::factory()->role(Role::DENTIST)->create()->id])->assertSessionHasNoErrors();
+    expect(Appointment::query()->sole()->dentist_id)->toBe($this->dentist->id);
+
+    ($this->plan)(['customer_id' => User::factory()->create()->id, 'starttime' => '11:00'])
+        ->assertSessionHasErrors('customer_id');
 });
 
 test('roles must match', function () {
-    ($this->plan)(['dentist_id' => $this->assistant->id])->assertSessionHasErrors('dentist_id');
     ($this->plan)(['assistant_id' => $this->dentist->id])->assertSessionHasErrors('assistant_id');
     ($this->plan)(['customer_id' => $this->dentist->id])->assertSessionHasErrors('customer_id');
 });
@@ -100,15 +107,17 @@ test('inactive treatments cannot be planned', function () {
 
 test('nobody and no room can be booked twice', function () {
     ($this->plan)()->assertSessionHasNoErrors();
-    $otherCustomer = User::factory()->create()->id;
+    $otherCustomer = User::factory()->withDentist($this->dentist)->create()->id;
+    // A customer of another dentist, to test the assistant and the room
+    $otherDentistsCustomer = fn () => User::factory()->withDentist(User::factory()->role(Role::DENTIST)->create())->create()->id;
 
     ($this->plan)(['customer_id' => $otherCustomer, 'assistant_id' => User::factory()->role(Role::ASSISTANT)->create()->id, 'room_id' => Room::create(['name' => 'Kamer 2'])->room_id])
         ->assertSessionHasErrors('starttime'); // same dentist
 
-    ($this->plan)(['customer_id' => $otherCustomer, 'dentist_id' => User::factory()->role(Role::DENTIST)->create()->id, 'room_id' => Room::create(['name' => 'Kamer 3'])->room_id])
+    ($this->plan)(['customer_id' => $otherDentistsCustomer(), 'room_id' => Room::create(['name' => 'Kamer 3'])->room_id])
         ->assertSessionHasErrors('starttime'); // same assistant
 
-    ($this->plan)(['customer_id' => $otherCustomer, 'dentist_id' => User::factory()->role(Role::DENTIST)->create()->id, 'assistant_id' => User::factory()->role(Role::ASSISTANT)->create()->id])
+    ($this->plan)(['customer_id' => $otherDentistsCustomer(), 'assistant_id' => User::factory()->role(Role::ASSISTANT)->create()->id])
         ->assertSessionHasErrors('starttime'); // same room
 
     expect(Appointment::query()->count())->toBe(1);
@@ -190,7 +199,7 @@ test('admins can reschedule an appointment and change its status', function () {
 
 test('rescheduling follows the planning rules', function () {
     ($this->plan)();
-    ($this->plan)(['customer_id' => User::factory()->create()->id, 'starttime' => '11:00']);
+    ($this->plan)(['customer_id' => User::factory()->withDentist($this->dentist)->create()->id, 'starttime' => '11:00']);
     $second = Appointment::query()->where('starttime', '11:00:00')->sole();
 
     $move = fn (array $attributes) => $this->actingAs($this->admin)

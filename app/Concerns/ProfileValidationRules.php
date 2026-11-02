@@ -2,7 +2,6 @@
 
 namespace App\Concerns;
 
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -21,16 +20,6 @@ trait ProfileValidationRules
             'lastname' => $this->nameRules(),
             'email' => $this->emailRules($userId),
         ];
-    }
-
-    /**
-     * Get the validation rules for the dentist a customer chooses (optional).
-     *
-     * @return array<int, ValidationRule|array<mixed>|string>
-     */
-    protected function dentistRules(): array
-    {
-        return ['nullable', 'integer', Rule::exists('users', 'id')->where('role_id', Role::dentistId())];
     }
 
     /**

@@ -20,7 +20,6 @@ class ProfileUpdateRequest extends FormRequest
         return [
             ...$this->profileRules($this->user()->id),
             'phonenumber' => $this->phoneRules(),
-            'employee_id' => $this->dentistRules(),
             'birthday' => ['nullable', 'date', 'before:today'],
 
             // The address is optional, but once one part is filled in all parts are needed.
@@ -38,7 +37,6 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'phonenumber' => 'telefoonnummer',
-            'employee_id' => 'tandarts',
             'birthday' => 'geboortedatum',
             'street' => 'straat',
             'house_number' => 'huisnummer',

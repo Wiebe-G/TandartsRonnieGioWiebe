@@ -64,7 +64,7 @@ function addMinutes(time: string, minutes: number) {
 // What each missing profile detail means for the customer
 const missingLabels: Record<string, string> = {
 	tandarts:
-		'Een eigen tandarts (alleen bij die tandarts kunt u een afspraak maken)',
+		'Een eigen tandarts. Die wijst de praktijk u toe; neem hiervoor contact met ons op.',
 	adres: 'Uw adres: straat, huisnummer, postcode en plaats',
 	telefoonnummer: 'Uw telefoonnummer',
 	geboortedatum: 'Uw geboortedatum',
@@ -159,7 +159,7 @@ export default function CreateAppointment({
 				<div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 md:p-6">
 					<Heading
 						title="Afspraak maken"
-						description="Kies een behandeling, uw tandarts en een moment dat u uitkomt."
+						description="Kies een behandeling en een moment dat u uitkomt bij uw tandarts."
 					/>
 					<Card>
 						<CardContent className="space-y-4 pt-6">
@@ -182,11 +182,14 @@ export default function CreateAppointment({
 									</ul>
 								</div>
 							</div>
-							<Button asChild>
-								<Link href={editProfile()}>
-									Gegevens aanvullen in mijn profiel
-								</Link>
-							</Button>
+							{/* The dentist is assigned by the practice, not filled in by the customer */}
+							{missing.some((item) => item !== 'tandarts') && (
+								<Button asChild>
+									<Link href={editProfile()}>
+										Gegevens aanvullen in mijn profiel
+									</Link>
+								</Button>
+							)}
 						</CardContent>
 					</Card>
 				</div>
@@ -306,7 +309,7 @@ export default function CreateAppointment({
 			>
 				<Heading
 					title="Afspraak maken"
-					description="Kies een behandeling, uw tandarts en een moment dat u uitkomt."
+					description="Kies een behandeling en een moment dat u uitkomt bij uw tandarts."
 				/>
 
 				<Card>

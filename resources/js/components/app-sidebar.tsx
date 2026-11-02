@@ -6,6 +6,7 @@ import {
 	CalendarPlus,
 	ClipboardList,
 	ReceiptText,
+	ScrollText,
 	FolderGit2,
 	History,
 	LayoutGrid,
@@ -125,6 +126,11 @@ export function AppSidebar() {
 						href: admin.calendar.index(),
 						icon: CalendarDays,
 					},
+					{
+						title: 'Logboek',
+						href: admin.logs.index(),
+						icon: ScrollText,
+					},
 				]
 			: []),
 		{
@@ -139,7 +145,7 @@ export function AppSidebar() {
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" asChild>
+						<SidebarMenuButton size="lg" className="h-auto" asChild>
 							<Link href={dashboardUrl} prefetch>
 								<AppLogo />
 							</Link>

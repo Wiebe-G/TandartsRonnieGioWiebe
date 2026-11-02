@@ -2,7 +2,6 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import { CalendarX } from 'lucide-react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { LogoutButton } from '@/components/logout-button';
@@ -10,7 +9,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
 import { send } from '@/routes/verification';
@@ -30,16 +28,21 @@ export default function Profile({
 	mustVerifyEmail,
 	status,
 	address,
-	dentists,
+	dentist,
 	missingBookingDetails,
 }: {
 	mustVerifyEmail: boolean;
 	status?: string;
 	address: Address | null;
-	dentists: { id: number; name: string }[] | null;
+	/** Customers only: their dentist's name, '' when none is assigned yet */
+	dentist: string | null;
 	missingBookingDetails: string[];
 }) {
 	const { auth } = usePage<PageProps>().props;
+	// The dentist is assigned by the practice, so it is not something to fill in here
+	const toFillIn = missingBookingDetails.filter(
+		(detail) => detail !== 'tandarts',
+	);
 
 	return (
 		<>
@@ -47,7 +50,7 @@ export default function Profile({
 
 			<h1 className="sr-only">Mijn profiel</h1>
 
-			{missingBookingDetails.length > 0 && (
+			{toFillIn.length > 0 && (
 				<Alert>
 					<CalendarX />
 					<AlertTitle>
@@ -59,7 +62,7 @@ export default function Profile({
 							ingevuld:
 						</p>
 						<ul className="list-inside list-disc">
-							{missingBookingDetails.map((detail) => (
+							{toFillIn.map((detail) => (
 								<li
 									key={detail}
 									className="first-letter:uppercase"
@@ -191,39 +194,22 @@ export default function Profile({
 							</div>
 						</section>
 
-						{dentists && (
+						{dentist !== null && (
 							<section className="space-y-6">
 								<Heading
 									variant="small"
 									title="Mijn tandarts"
-									description="De tandarts die u vast behandelt. Bij een nieuwe afspraak staat deze al voor u klaar."
+									description="De tandarts die u vast behandelt. De praktijk wijst deze aan u toe."
 								/>
 
-								<div className="grid gap-2">
-									<Label htmlFor="employee_id">
-										Tandarts
-									</Label>
-									<NativeSelect
-										id="employee_id"
-										name="employee_id"
-										defaultValue={
-											auth.user.employee_id ?? ''
-										}
-									>
-										<option value="">
-											Nog geen voorkeur
-										</option>
-										{dentists.map((dentist) => (
-											<option
-												key={dentist.id}
-												value={dentist.id}
-											>
-												{dentist.name}
-											</option>
-										))}
-									</NativeSelect>
-									<InputError message={errors.employee_id} />
-								</div>
+								<p className="text-sm">
+									{dentist || (
+										<span className="text-muted-foreground">
+											Nog geen tandarts toegewezen. Neem
+											contact op met de praktijk.
+										</span>
+									)}
+								</p>
 							</section>
 						)}
 
@@ -308,7 +294,6 @@ export default function Profile({
 				<LogoutButton variant="secondary" size="default" />
 			</section>
 
-			<DeleteUser />
 		</>
 	);
 }

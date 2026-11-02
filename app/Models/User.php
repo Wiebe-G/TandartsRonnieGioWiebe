@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
@@ -139,29 +140,31 @@ class User extends Authenticatable
     }
 
     /**
-     * Dentists as {id, name} pairs, for the "choose your dentist" lists.
-     *
-     * @return list<array{id: int, name: string}>
-     */
-    public static function dentistOptions(): array
-    {
-        return array_values(static::query()
-            ->where('role_id', Role::dentistId())
-            ->orderBy('firstname')
-            ->get()
-            ->map(fn (User $dentist) => ['id' => $dentist->id, 'name' => $dentist->name])
-            ->all());
-    }
-
-    /**
      * The dentist assigned to this customer, or null when they have none (or it is not a dentist).
-     * Customers can only book appointments with this dentist.
+     * The admin assigns it; every appointment of the customer is with this dentist.
      */
     public function assignedDentist(): ?User
     {
         $dentist = $this->employee;
 
         return $dentist && (int) $dentist->role_id === Role::dentistId() ? $dentist : null;
+    }
+
+    /**
+     * The id of a customer's assigned dentist, for staff planning an appointment.
+     * Without one the appointment cannot be planned, so this fails validation on $field.
+     */
+    public static function assignedDentistIdFor(int|string $customerId, string $field): int
+    {
+        $dentist = static::query()->findOrFail($customerId)->assignedDentist();
+
+        if (! $dentist) {
+            throw ValidationException::withMessages([
+                $field => 'Deze klant heeft nog geen tandarts. Een admin wijst die toe bij de klantgegevens.',
+            ]);
+        }
+
+        return $dentist->id;
     }
 
     /**
