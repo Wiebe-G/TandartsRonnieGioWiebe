@@ -90,7 +90,7 @@ test('admins still see every appointment', function () {
 
 test('an assistant who plans an appointment for a colleague goes back to the overview', function () {
     $colleague = User::factory()->role(Role::ASSISTANT)->create();
-    $customer = User::factory()->create();
+    $customer = User::factory()->withDentist($this->otherDentist)->create();
     $treatment = Treatment::create(['name' => 'Controle', 'price' => 28.5, 'duration' => 30, 'active' => true]);
     $room = Room::query()->first() ?? Room::create(['name' => 'Kamer 1']);
     $this->travelTo(Carbon::parse('2026-10-19 07:00'));
@@ -99,7 +99,6 @@ test('an assistant who plans an appointment for a colleague goes back to the ove
         ->post(route('admin.appointments.store'), [
             'customer_id' => $customer->id,
             'treatment_id' => $treatment->treatment_id,
-            'dentist_id' => $this->otherDentist->id,
             'assistant_id' => $colleague->id,
             'room_id' => $room->room_id,
             'date' => '2026-10-21',

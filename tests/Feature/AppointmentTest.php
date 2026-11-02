@@ -356,12 +356,11 @@ test('the booking is kept when the confirmation mail fails', function () {
     expect(Appointment::count())->toBe(1);
 });
 
-test('a dentist who no longer works here cannot be booked or chosen', function () {
+test('a dentist who no longer works here cannot be booked', function () {
     $this->dentist->update(['status' => 'inactive']);
 
     expect($this->customer->refresh()->assignedDentist())->toBeNull()
-        ->and($this->customer->missingBookingDetails())->toContain('tandarts')
-        ->and(collect(User::dentistOptions())->pluck('id'))->not->toContain($this->dentist->id);
+        ->and($this->customer->missingBookingDetails())->toContain('tandarts');
 
     $this->actingAs($this->customer)
         ->post(route('appointments.store'), bookingData())
