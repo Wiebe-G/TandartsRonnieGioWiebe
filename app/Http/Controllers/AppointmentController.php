@@ -169,6 +169,10 @@ class AppointmentController extends Controller
         $appointment = Appointment::query()->find($validated['id']);
         abort_unless($appointment->isVisibleTo(auth()->user()), 403);
         abort_if(Auth::check() && auth()->user()->role_id == 1, 403);
+        // Een afgeronde afspraak ligt vast en kan niet meer verwijderd worden
+        if ($appointment->isLocked()) {
+            throw ValidationException::withMessages(['id' => 'Een afgeronde afspraak kan niet meer verwijderd worden.']);
+        }
         // Een afspraak met een factuur blijft bestaan
         if ($appointment->invoice()->exists()) {
             throw ValidationException::withMessages(['id' => 'Deze afspraak heeft al een factuur en kan niet meer verwijderd worden.']);

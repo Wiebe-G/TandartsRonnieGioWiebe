@@ -251,6 +251,13 @@ class AppointmentController extends Controller
     {
         $this->ensureVisible($request, $appointment);
 
+        // A completed appointment is locked, so it cannot be deleted either
+        if ($appointment->isLocked()) {
+            throw ValidationException::withMessages([
+                'complete' => 'Een afgeronde afspraak kan niet meer verwijderd worden.',
+            ]);
+        }
+
         // An invoiced appointment stays, so the invoice keeps pointing at what was done
         if ($appointment->invoice()->exists()) {
             throw ValidationException::withMessages([

@@ -253,6 +253,22 @@ test('admins can delete an appointment', function () {
         ->and(DB::table('appointment_treatment')->count())->toBe(0);
 });
 
+test('a completed appointment cannot be deleted', function () {
+    ($this->plan)();
+    $appointment = Appointment::query()->sole();
+    $appointment->update(['status' => Appointment::COMPLETED]);
+
+    $this->actingAs($this->admin)
+        ->delete(route('admin.appointments.destroy', $appointment))
+        ->assertSessionHasErrors('complete');
+
+    $this->actingAs($this->assistant)
+        ->post(route('appointments.delete'), ['id' => $appointment->appointment_id])
+        ->assertSessionHasErrors('id');
+
+    expect(Appointment::query()->count())->toBe(1);
+});
+
 test('an appointment can be completed once it has started, also after it ended', function (string $now) {
     ($this->plan)(['starttime' => '10:00']); // 10:00-10:30 on Wednesday 21 October
     $appointment = Appointment::query()->sole();
