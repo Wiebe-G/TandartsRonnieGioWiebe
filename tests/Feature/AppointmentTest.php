@@ -114,7 +114,7 @@ test('customers without a dentist cannot book', function () {
 
     $this->actingAs($customer)
         ->post(route('appointments.store'), bookingData())
-        ->assertSessionHasErrors(['dentist_id' => 'U heeft nog geen tandarts. Kies eerst een tandarts in uw profiel.']);
+        ->assertSessionHasErrors(['dentist_id' => 'U heeft nog geen tandarts. De praktijk wijst u een tandarts toe; neem contact met ons op.']);
 
     expect(Appointment::count())->toBe(0);
 });

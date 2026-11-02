@@ -66,7 +66,6 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'customer_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::customerId())],
             'treatment_id' => ['required', Rule::exists(Treatment::class, 'treatment_id')->where('active', true)],
-            'dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
             'assistant_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
             'room_id' => ['required', Rule::exists(Room::class, 'room_id')],
             'date' => ['required', 'date_format:Y-m-d'],
@@ -75,11 +74,13 @@ class AppointmentController extends Controller
         ], [
             'customer_id.required' => 'Kies een klant.',
             'treatment_id.required' => 'Kies een behandeling.',
-            'dentist_id.required' => 'Kies een tandarts.',
             'assistant_id.required' => 'Kies een assistent.',
             'room_id.required' => 'Kies een kamer.',
             'starttime.required' => 'Kies een tijd.',
         ]);
+
+        // The dentist is not chosen here: it is always the one the admin assigned to the customer
+        $validated['dentist_id'] = User::assignedDentistIdFor($validated['customer_id'], 'customer_id');
 
         $treatment = Treatment::query()->findOrFail($validated['treatment_id']);
         $start = $validated['starttime'].':00';

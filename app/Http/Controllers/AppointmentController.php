@@ -50,7 +50,6 @@ class AppointmentController extends Controller
     {
         $validated = $request->validate([
             'Customer_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::customerId())],
-            'Dentist_id' => ['required', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::DENTIST))],
             // Een assistent is optioneel
             'Assistant_id' => ['nullable', Rule::exists(User::class, 'id')->where('role_id', Role::idFor(Role::ASSISTANT))],
             'Date' => ['required', 'date'],
@@ -58,9 +57,11 @@ class AppointmentController extends Controller
             'Note' => ['nullable', 'string', 'max:255'],
         ], [
             'Customer_id.required' => 'Kies een klant.',
-            'Dentist_id.required' => 'Kies een tandarts.',
             'Type.required' => 'Kies een behandeling.',
         ]);
+
+        // De tandarts wordt niet gekozen: het is altijd de vaste tandarts van de klant
+        $validated['Dentist_id'] = User::assignedDentistIdFor($validated['Customer_id'], 'Customer_id');
 
         $Datum = $validated['Date'];
         $tijd = Carbon::parse($Datum)->timezone('Europe/Amsterdam');

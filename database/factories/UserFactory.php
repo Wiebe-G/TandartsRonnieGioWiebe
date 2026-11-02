@@ -106,6 +106,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * A customer with the given dentist assigned (as the admin does on the customer's page).
+     */
+    public function withDentist(User $dentist): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'employee_id' => $dentist->id,
+        ]);
+    }
+
+    /**
      * A customer that can book right away: complete profile and an assigned dentist.
      */
     public function readyToBook(?User $dentist = null): static

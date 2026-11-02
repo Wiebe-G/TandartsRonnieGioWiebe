@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { CalendarPlus, Clock, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import AppLogoFull from '@/components/app-logo-full';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
@@ -22,7 +23,7 @@ const days = [
 ];
 
 export default function Welcome({ openingHours }: Props) {
-	const { auth } = usePage().props;
+	const { auth, name } = usePage().props;
 
 	// Only known in the browser, so the server-rendered page never disagrees with it
 	const [today, setToday] = useState<number | null>(null);
@@ -41,9 +42,12 @@ export default function Welcome({ openingHours }: Props) {
 			<div className="bg-background text-foreground flex min-h-screen flex-col">
 				<header className="bg-background/90 sticky top-0 z-10 border-b backdrop-blur">
 					<nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-						<span className="font-semibold">
-							Tandheelkundig Centrum Hengelo
-						</span>
+						<Link
+							href="/"
+							className="flex items-center"
+						>
+							<AppLogoFull className="h-10 w-auto" />
+						</Link>
 						<div className="flex items-center gap-2">
 							{auth.user ? (
 								<Button asChild size="sm">
@@ -188,7 +192,7 @@ export default function Welcome({ openingHours }: Props) {
 				</main>
 
 				<footer className="text-muted-foreground border-t py-6 text-center text-sm">
-					Tandheelkundig Centrum Hengelo
+					{name}
 				</footer>
 			</div>
 		</>

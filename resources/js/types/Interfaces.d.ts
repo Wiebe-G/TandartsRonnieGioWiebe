@@ -23,6 +23,8 @@ export interface User {
 	user: User;
 	id: number;
 	role_id: number;
+	/** For customers: their assigned dentist */
+	employee_id: number | null;
 	role?: Role;
 	firstname: string;
 	lastname: string;

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use App\Models\Postcode;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,7 +30,8 @@ class ProfileController extends Controller
                 'postcode' => $address->postcode(),
                 'city' => $address->city,
             ] : null,
-            'dentists' => $request->user()->isCustomer() ? User::dentistOptions() : null,
+            // Customers only see their dentist; the admin assigns it
+            'dentist' => $request->user()->isCustomer() ? ($request->user()->assignedDentist()?->name ?? '') : null,
             // Shown as a notice: customers can only book once these are filled in
             'missingBookingDetails' => $request->user()->isCustomer() ? $request->user()->missingBookingDetails() : [],
         ]);
@@ -45,11 +44,6 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->safe()->only(['firstname', 'lastname', 'email', 'phonenumber', 'birthday']));
         $request->user()->address = $this->saveAddress($request);
-
-        // Only customers choose a dentist; for employees this field means something else.
-        if ($request->user()->isCustomer()) {
-            $request->user()->employee_id = $request->integer('employee_id') ?: null;
-        }
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
@@ -81,22 +75,5 @@ class ProfileController extends Controller
         ]);
 
         return $key;
-    }
-
-    /**
-     * Delete the user's profile.
-     */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
-    {
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect('/');
     }
 }

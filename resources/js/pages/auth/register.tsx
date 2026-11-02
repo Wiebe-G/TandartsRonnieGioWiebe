@@ -5,17 +5,15 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 type Props = {
 	passwordRules: string;
-	dentists: { id: number; name: string }[];
 };
 
-export default function Register({ passwordRules, dentists }: Props) {
+export default function Register({ passwordRules }: Props) {
 	return (
 		<>
 			<Head title="Registreren" />
@@ -94,37 +92,11 @@ export default function Register({ passwordRules, dentists }: Props) {
 							</div>
 
 							<div className="grid gap-2">
-								<Label htmlFor="employee_id">
-									Kies uw tandarts{' '}
-									<span className="text-muted-foreground font-normal">
-										(optioneel)
-									</span>
-								</Label>
-								<NativeSelect
-									id="employee_id"
-									name="employee_id"
-									tabIndex={5}
-									defaultValue=""
-								>
-									<option value="">Nog geen voorkeur</option>
-									{dentists.map((dentist) => (
-										<option
-											key={dentist.id}
-											value={dentist.id}
-										>
-											{dentist.name}
-										</option>
-									))}
-								</NativeSelect>
-								<InputError message={errors.employee_id} />
-							</div>
-
-							<div className="grid gap-2">
 								<Label htmlFor="password">Wachtwoord</Label>
 								<PasswordInput
 									id="password"
 									required
-									tabIndex={6}
+									tabIndex={5}
 									autoComplete="new-password"
 									name="password"
 									passwordrules={passwordRules}
@@ -139,7 +111,7 @@ export default function Register({ passwordRules, dentists }: Props) {
 								<PasswordInput
 									id="password_confirmation"
 									required
-									tabIndex={7}
+									tabIndex={6}
 									autoComplete="new-password"
 									name="password_confirmation"
 									passwordrules={passwordRules}
@@ -152,7 +124,7 @@ export default function Register({ passwordRules, dentists }: Props) {
 							<Button
 								type="submit"
 								className="mt-2 w-full"
-								tabIndex={8}
+								tabIndex={7}
 								data-test="register-user-button"
 							>
 								{processing && <Spinner />}
@@ -165,7 +137,7 @@ export default function Register({ passwordRules, dentists }: Props) {
 							<TextLink
 								href={login()}
 								data-test="login-link"
-								tabIndex={9}
+								tabIndex={8}
 							>
 								Inloggen
 							</TextLink>

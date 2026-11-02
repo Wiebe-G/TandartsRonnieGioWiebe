@@ -72,31 +72,24 @@ test('contact details and address can be saved', function () {
         );
 });
 
-test('customers can change their dentist', function () {
+test('customers see their dentist but cannot change it', function () {
     $dentist = User::factory()->dentist()->create();
-    $user = User::factory()->create();
+    $user = User::factory()->withDentist($dentist)->create();
+
+    $this->actingAs($user)
+        ->get(route('profile.edit'))
+        ->assertInertia(fn ($page) => $page->where('dentist', $dentist->name));
 
     $this->actingAs($user)
         ->patch(route('profile.update'), [
             'firstname' => $user->firstname,
             'lastname' => $user->lastname,
             'email' => $user->email,
-            'employee_id' => $dentist->id,
+            'employee_id' => User::factory()->dentist()->create()->id,
         ])
         ->assertSessionHasNoErrors();
 
     expect($user->refresh()->employee_id)->toBe($dentist->id);
-
-    $this->actingAs($user)
-        ->patch(route('profile.update'), [
-            'firstname' => $user->firstname,
-            'lastname' => $user->lastname,
-            'email' => $user->email,
-            'employee_id' => '',
-        ])
-        ->assertSessionHasNoErrors();
-
-    expect($user->refresh()->employee_id)->toBeNull();
 });
 
 test('an incomplete address is rejected', function () {
@@ -130,38 +123,4 @@ test('email verification status is unchanged when the email address is unchanged
         ->assertRedirect(route('profile.edit'));
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
-});
-
-test('user can delete their account', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->delete(route('profile.destroy'), [
-            'password' => 'password',
-        ]);
-
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect(route('home'));
-
-    $this->assertGuest();
-    expect($user->fresh())->toBeNull();
-});
-
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->from(route('profile.edit'))
-        ->delete(route('profile.destroy'), [
-            'password' => 'wrong-password',
-        ]);
-
-    $response
-        ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
-
-    expect($user->fresh())->not->toBeNull();
 });

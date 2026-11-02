@@ -19,7 +19,6 @@ export default function Create() {
 	const [selectedTreatmentId, setSelectedTreatmentId] = useState<number>();
 	const [statefulDate, setStatefulDate] = useState<Date>();
 	const [note, setNote] = useState('');
-	const [selectedDentist, setSelectedDentist] = useState(0);
 	const [selectedAssistant, setSelectedAssistant] = useState(0);
 
 	let Dentists: User[] = [];
@@ -34,6 +33,11 @@ export default function Create() {
 			Assistants = [...Assistants, user];
 		}
 	});
+
+	// De tandarts wordt niet gekozen: het is altijd de vaste tandarts van de klant (die wijst de admin toe)
+	const customerDentist = Dentists.find(
+		(d) => d.id === selectedUser?.employee_id,
+	);
 
 	const handleCategoryChange = (id: number): void => {
 		setSelectedUser(Customers.find((cat) => cat.id === id));
@@ -52,8 +56,8 @@ export default function Create() {
 			alert('Geen klant geselecteerd');
 			return;
 		}
-		if (!selectedDentist) {
-			alert('Geen tandarts geselecteerd');
+		if (!customerDentist) {
+			alert('Deze klant heeft nog geen tandarts. Een admin wijst die toe.');
 			return;
 		}
 		if (!selectedTreatmentId) {
@@ -71,7 +75,6 @@ export default function Create() {
 		}
 		router.post(`/appointments/create`, {
 			Customer_id: selectedUser.id,
-			Dentist_id: selectedDentist,
 			Assistant_id: selectedAssistant || null,
 			Date: statefulDate,
 			Type: selectedTreatmentId,
@@ -81,10 +84,6 @@ export default function Create() {
 
 	const returnSelectedTreatment = (id: number) => {
 		return Treatments.find((tr) => tr.treatment_id === id);
-	};
-
-	const returnSelectedDentist = (id: number) => {
-		return Dentists.find((tr) => tr.id === id);
 	};
 
 	const returnSelectedAssistant = (id: number) => {
@@ -144,44 +143,16 @@ export default function Create() {
 						</Dropdown.Portal>
 					</Dropdown.Root>
 				</div>
-				<div>
-					<Dropdown.Root>
-						<Dropdown.Trigger asChild>
-							<button
-								type={'button'}
-								className="flex items-center rounded bg-blue-500 px-4 py-2 text-white"
-								value={0}
-							>
-								{selectedDentist
-									? `${returnSelectedDentist(selectedDentist)?.firstname}`
-									: 'Geen tandarts'}
-								<ChevronDownIcon className="ml-2 size-4" />
-							</button>
-						</Dropdown.Trigger>
-
-						<Dropdown.Portal>
-							<Dropdown.Content className="z-50 flex min-w-55 flex-col items-center rounded-md border bg-white p-1 shadow-lg dark:bg-slate-800">
-								<Dropdown.Item
-									className={'DropdownDarkButtonCenteredItem'}
-									onSelect={() => setSelectedDentist(0)}
-								>
-									<span>Geen tandarts</span>
-								</Dropdown.Item>
-								{Dentists.map((d: User) => (
-									<Dropdown.Item
-										className="DropdownDarkButtonCenteredItem"
-										key={d.id}
-										onSelect={() =>
-											setSelectedDentist(d.id)
-										}
-									>
-										{`${d.firstname} ${d.lastname}`}
-									</Dropdown.Item>
-								))}
-								<Dropdown.Separator className="my-1 h-px bg-gray-200" />
-							</Dropdown.Content>
-						</Dropdown.Portal>
-					</Dropdown.Root>
+				{/* Alleen ter info: de tandarts komt van de klant */}
+				<div className="text-center">
+					<span>Tandarts: </span>
+					<span className="font-semibold">
+						{customerDentist
+							? `${customerDentist.firstname} ${customerDentist.lastname}`
+							: selectedUser
+								? 'Geen tandarts toegewezen'
+								: 'Kies eerst een klant'}
+					</span>
 				</div>
 				<div id="choose-assistand">
 					<Dropdown.Root>

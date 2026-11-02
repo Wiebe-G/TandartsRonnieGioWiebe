@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
 	CalendarDays,
 	Clock,
@@ -88,10 +88,10 @@ export default function CreateAppointment({
 	options,
 	busy,
 }: Props) {
+	const { auth } = usePage().props;
 	const form = useForm({
 		customer_id: '',
 		treatment_id: '',
-		dentist_id: '',
 		assistant_id: '',
 		room_id: '',
 		date: '',
@@ -106,9 +106,11 @@ export default function CreateAppointment({
 	const customer = customers.find(
 		(item) => String(item.id) === data.customer_id,
 	);
+	// Not chosen here: always the dentist the admin assigned to the customer
 	const dentist = options.dentists.find(
-		(item) => String(item.id) === data.dentist_id,
+		(item) => item.id === customer?.employee_id,
 	);
+	const dentistId = dentist?.id ?? null;
 	const room = options.rooms.find(
 		(item) => String(item.room_id) === data.room_id,
 	);
@@ -121,7 +123,7 @@ export default function CreateAppointment({
 						date: data.date,
 						durationMinutes: treatment.duration,
 						busy,
-						dentistId: Number(data.dentist_id) || null,
+						dentistId,
 						assistantId: Number(data.assistant_id) || null,
 						roomId: Number(data.room_id) || null,
 					})
@@ -131,7 +133,7 @@ export default function CreateAppointment({
 			data.date,
 			weekend,
 			busy,
-			data.dentist_id,
+			dentistId,
 			data.assistant_id,
 			data.room_id,
 		],
@@ -140,18 +142,6 @@ export default function CreateAppointment({
 	const chosenSlot = slots.find(
 		(slot) => slot.start === data.starttime && slot.free,
 	);
-
-	const chooseCustomer = (id: string) => {
-		const picked = customers.find((item) => String(item.id) === id);
-		// Start with the customer's own dentist, when they have one
-		setData((previous) => ({
-			...previous,
-			customer_id: id,
-			dentist_id:
-				previous.dentist_id ||
-				(picked?.employee_id ? String(picked.employee_id) : ''),
-		}));
-	};
 
 	const chooseDate = (date: string) => {
 		setData((previous) => ({ ...previous, date, starttime: '' }));
@@ -163,7 +153,7 @@ export default function CreateAppointment({
 	const missing = [
 		!data.customer_id && 'klant',
 		!data.treatment_id && 'behandeling',
-		!data.dentist_id && 'tandarts',
+		data.customer_id && !dentist && 'tandarts bij de klant',
 		!data.assistant_id && 'assistent',
 		!data.room_id && 'kamer',
 		!chosenSlot && 'tijd',
@@ -200,7 +190,10 @@ export default function CreateAppointment({
 										id="customer"
 										value={data.customer_id}
 										onChange={(event) =>
-											chooseCustomer(event.target.value)
+											setData(
+												'customer_id',
+												event.target.value,
+											)
 										}
 										required
 									>
@@ -260,34 +253,34 @@ export default function CreateAppointment({
 								<CardTitle>2. Behandelaar en kamer</CardTitle>
 							</CardHeader>
 							<CardContent className="grid gap-4 sm:grid-cols-3">
+								{/* Shown only: the admin assigns the dentist on the customer's page */}
 								<Field
 									label="Tandarts"
 									htmlFor="dentist"
-									error={errors.dentist_id}
+									error={errors.customer_id}
 								>
-									<NativeSelect
+									<Input
 										id="dentist"
-										value={data.dentist_id}
-										onChange={(event) =>
-											setData(
-												'dentist_id',
-												event.target.value,
-											)
+										value={
+											dentist
+												? dentist.name
+												: customer
+													? 'Geen tandarts toegewezen'
+													: 'Kies eerst een klant'
 										}
-										required
-									>
-										<option value="" disabled>
-											Selecteer een tandarts
-										</option>
-										{options.dentists.map((item) => (
-											<option
-												key={item.id}
-												value={item.id}
-											>
-												{item.name}
-											</option>
-										))}
-									</NativeSelect>
+										readOnly
+										disabled
+									/>
+									{customer && !dentist && auth.isAdmin && (
+										<Link
+											href={admin.customers.edit(
+												customer.id,
+											)}
+											className="text-sm underline underline-offset-4"
+										>
+											Tandarts toewijzen bij de klant
+										</Link>
+									)}
 								</Field>
 
 								<Field
@@ -387,10 +380,11 @@ export default function CreateAppointment({
 									</p>
 								) : !data.date ||
 								  !treatment ||
-								  !data.dentist_id ? (
+								  !dentist ? (
 									<p className="text-muted-foreground rounded-md border border-dashed p-4 text-center text-sm">
-										Kies eerst een behandeling, tandarts en
-										datum om de vrije tijden te zien.
+										Kies eerst een klant (met tandarts),
+										behandeling en datum om de vrije tijden
+										te zien.
 									</p>
 								) : (
 									<div className="grid gap-2">
